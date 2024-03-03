@@ -8,6 +8,7 @@ import SupportIcon from './icons/IconSupport.vue'
 </script>
 
 <template>
+  <Button icon="pi pi-check" label="Primary"></Button>
   <WelcomeItem>
     <template #icon>
       <DocumentationIcon />

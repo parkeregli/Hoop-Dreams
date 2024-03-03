@@ -1,14 +1,30 @@
-import './assets/main.css'
+import "./assets/main.css";
 
-import { createApp } from 'vue'
-import { createPinia } from 'pinia'
+import { createApp } from "vue";
+import { createPinia } from "pinia";
 
-import App from './App.vue'
-import router from './router'
+// UI Library
+import PrimeVue from "primevue/config";
 
-const app = createApp(App)
+// Components
+import Button from "primevue/button";
+import Card from "primevue/card";
 
-app.use(createPinia())
-app.use(router)
+import App from "./App.vue";
+import router from "./router";
+import "primeicons/primeicons.css";
+import "primevue/resources/primevue.min.css";
+import "primevue/resources/themes/aura-dark-lime/theme.css";
 
-app.mount('#app')
+const app = createApp(App);
+
+app.use(PrimeVue);
+
+//Register global components
+app.component("Button", Button);
+app.component("Card", Card);
+
+app.use(createPinia());
+app.use(router);
+
+app.mount("#app");
