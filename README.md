@@ -1,40 +1,60 @@
-# bballsim-fe
+# 🏀 Hoop Dreams
 
-This template should help get you started developing with Vue 3 in Vite.
+Welcome to the Indie Basketball Manager Sim! This is a game where you can take on the role of a basketball team manager and lead your team to victory. Make strategic decisions, manage your roster, and compete against other teams in a thrilling basketball simulation experience.
 
-## Recommended IDE Setup
+## 🚀 Getting Started
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur) + [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin).
+To get started with the development of the Indie Basketball Manager Sim, follow these steps:
 
-## Type Support for `.vue` Imports in TS
+1. Clone the repository to your local machine.
+2. Make sure you have the following dependencies installed:
+- Node.js
+- Rust
+- Tauri
+3. Open a terminal and navigate to the project directory.
+4. Run the following command to install the necessary dependencies:
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin) to make the TypeScript language service aware of `.vue` types.
+   ```
+   npm install
+   ```
 
-If the standalone TypeScript plugin doesn't feel fast enough to you, Volar has also implemented a [Take Over Mode](https://github.com/johnsoncodehk/volar/discussions/471#discussioncomment-1361669) that is more performant. You can enable it by the following steps:
+5. Once the installation is complete, you can start the development server by running the following command:
 
-1. Disable the built-in TypeScript Extension
-    1) Run `Extensions: Show Built-in Extensions` from VSCode's command palette
-    2) Find `TypeScript and JavaScript Language Features`, right click and select `Disable (Workspace)`
-2. Reload the VSCode window by running `Developer: Reload Window` from the command palette.
+   ```
+   npm run tauri dev
+   ```
 
-## Customize configuration
+   This command will launch the game using the Tauri framework and open it in your default web browser.
 
-See [Vite Configuration Reference](https://vitejs.dev/config/).
+## 🎮 Gameplay
 
-## Project Setup
+In the Indie Basketball Manager Sim, you'll have the opportunity to:
 
-```sh
-npm install
-```
+- Create and customize your own basketball team.
+- Manage your team's roster, including player drafting, trading, and development.
+- Set up game strategies and tactics.
+- Compete against AI-controlled teams in a simulated basketball league.
+- Track your team's performance, statistics, and rankings.
+- Make crucial decisions that impact your team's success on and off the court.
 
-### Compile and Hot-Reload for Development
+## 🤝 Contributing
 
-```sh
-npm run dev
-```
+We welcome contributions from the community to make the Indie Basketball Manager Sim even better! If you'd like to contribute, please follow these steps:
 
-### Type-Check, Compile and Minify for Production
+1. Fork the repository.
+2. Create a new branch for your feature or bug fix.
+3. Make your changes and commit them with descriptive commit messages.
+4. Push your changes to your forked repository.
+5. Submit a pull request to the main repository, explaining your changes in detail.
 
-```sh
-npm run build
-```
+Please ensure that your contributions adhere to the project's coding standards and guidelines.
+
+## 📄 License
+
+The Indie Basketball Manager Sim is released under the [MIT License](LICENSE). Feel free to modify and distribute the game in accordance with the terms of the license.
+
+## 📧 Contact
+
+If you have any questions, suggestions, or feedback, please don't hesitate to reach out to us. You can contact the development team at [parker.egli22@gmail.com](mailto:parker.egli22@gmail.com).
+
+Thank you for your interest in the Hoop Dreams. We hope you enjoy the game and have a fantastic time managing your dream basketball team! 🏀✨
