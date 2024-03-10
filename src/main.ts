@@ -6,9 +6,10 @@ import { createPinia } from "pinia";
 // UI Library
 import PrimeVue from "primevue/config";
 
-// Components
+// Import global components
 import Button from "primevue/button";
 import Card from "primevue/card";
+import OrderList from "primevue/orderlist";
 
 import App from "./App.vue";
 import router from "./router";
@@ -23,6 +24,7 @@ app.use(PrimeVue);
 //Register global components
 app.component("Button", Button);
 app.component("Card", Card);
+app.component("OrderList", OrderList);
 
 app.use(createPinia());
 app.use(router);

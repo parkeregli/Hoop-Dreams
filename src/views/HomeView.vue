@@ -1,9 +1,9 @@
-<script setup lang="ts">
-import TheWelcome from '../components/TheWelcome.vue'
-</script>
-
 <template>
   <main>
-    <TheWelcome />
+    <GameCast />
   </main>
 </template>
+
+<script setup lang="ts">
+  import GameCast from '@/components/GameCast.vue';
+</script>
