@@ -9,14 +9,14 @@ import PrimeVue from "primevue/config";
 // Import global components
 import Button from "primevue/button";
 import Card from "primevue/card";
-import OrderList from "primevue/orderlist";
+import DataView from "primevue/dataview";
 
 import App from "./App.vue";
 import router from "./router";
 import "primeicons/primeicons.css";
 import "primevue/resources/primevue.min.css";
 import "primevue/resources/themes/aura-dark-lime/theme.css";
-
+import "primeflex/primeflex.css";
 const app = createApp(App);
 
 app.use(PrimeVue);
@@ -24,7 +24,7 @@ app.use(PrimeVue);
 //Register global components
 app.component("Button", Button);
 app.component("Card", Card);
-app.component("OrderList", OrderList);
+app.component("DataView", DataView);
 
 app.use(createPinia());
 app.use(router);
