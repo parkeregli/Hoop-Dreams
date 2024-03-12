@@ -3,12 +3,21 @@
 mod court;
 mod player;
 mod team;
+mod util;
 
 use court::Court;
 use player::Player;
 use team::Team;
+use util::db;
 
 fn main() {
+    let db = db::init().unwrap();
+    let version: String = db
+        .query_row("SELECT sqlite_version()", [], |row| row.get(0))
+        .unwrap();
+
+    println!("Sqlite version: {}", version);
+
     let _court = Court::new();
 
     let mut team = Team::new("Cavs", "Cleveland");
