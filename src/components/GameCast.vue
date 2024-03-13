@@ -38,10 +38,4 @@ const items = [
   width: 100%;
   height: 200px;
 }
-
-.homeAway {
-  display: inline-flex;
-  width: 33%;
-  height: 300px;
-}
 </style>

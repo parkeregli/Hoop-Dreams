@@ -1,5 +1,5 @@
 <template>
-  <card class="homeAway">
+  <card>
     <template #title>
       <h1 class="title">{{ name }}</h1>
     </template>
@@ -25,5 +25,10 @@ const props = defineProps({ players: [], name: String });
 <style scoped>
 .title {
   text-align: center;
+}
+
+.card {
+  width: 100%;
+  height: 200px;
 }
 </style>
