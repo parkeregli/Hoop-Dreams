@@ -1,5 +1,5 @@
 <template>
-  <div class="row flex align-items-center just-content-center">
+  <div class="row flex align-items-center justify-content-between">
     <div class="w-full">
       <TeamDisplay :players="homePlayers" :name="'Home'" />
     </div>
