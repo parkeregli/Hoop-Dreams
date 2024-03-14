@@ -4,7 +4,7 @@
       <TeamDisplay :players="homePlayers" :name="'Home'" />
     </div>
     <div class="w-full">
-      <TeamStats :players="awayPlayers" :name="'Team Stats'" />
+      <TeamStats :teamStats="teamStats" :name="'Team Stats'" />
     </div>
     <div class="w-full">
       <TeamDisplay :players="awayPlayers" :name="'Away'" />
@@ -37,11 +37,14 @@ const awayPlayers = [
 ];
 
 const teamStats = [
-  { position: "PG", name: "Player Name" },
-  { position: "SG", name: "Player Name" },
-  { position: "SF", name: "Player Name" },
-  { position: "PF", name: "Player Name" },
-  { position: "C", name: "Player Name" },
+  { stat: "FG", home: "Home", name: "Away" },
+  { stat: "FG %", home: "Home", name: "Away" },
+  { stat: "3PT", home: "Home", name: "Away" },
+  { stat: "3PT %", home: "Home", name: "Away" },
+  { stat: "FT", home: "Home", name: "Away" },
+  { stat: "FT  %", home: "Home", name: "Away" },
+  { stat: "REB", home: "Home", name: "Away" },
+  { stat: "TO", home: "Home", name: "Away" },
 ];
 </script>
 
