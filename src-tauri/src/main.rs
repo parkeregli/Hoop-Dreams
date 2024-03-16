@@ -10,12 +10,11 @@ use team::Team;
 use util::db;
 
 fn main() {
-    let db = db::init().unwrap();
+    let _db = db::init().unwrap();
 
     let _court = Court::new();
 
-    let team = Team::new(String::from("Cavs"), String::from("Cleveland"));
-    team.write_to_db(&db).unwrap();
+    let _team = Team::new(String::from("Cavs"), String::from("Cleveland"));
 
     tauri::Builder::default()
         .run(tauri::generate_context!())
