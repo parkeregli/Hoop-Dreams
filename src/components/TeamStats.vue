@@ -3,8 +3,8 @@
     <template #title>
       <h1 class="title">{{ name }}</h1>
     </template>
-    <template class="flex flex-initial" #content>
-      <DataView class="overflow-scroll min-h-0" :value="teamStats">
+    <template #content>
+      <DataView :value="teamStats">
         <template #list="slotProps">
           <div class="flex flex-column">
             <div
