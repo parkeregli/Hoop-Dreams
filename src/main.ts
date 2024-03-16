@@ -10,6 +10,7 @@ import PrimeVue from "primevue/config";
 import Button from "primevue/button";
 import Card from "primevue/card";
 import DataView from "primevue/dataview";
+import Toolbar from "primevue/toolbar";
 
 import App from "./App.vue";
 import router from "./router";
@@ -25,7 +26,7 @@ app.use(PrimeVue);
 app.component("Button", Button);
 app.component("Card", Card);
 app.component("DataView", DataView);
-
+app.component("Toolbar", Toolbar);
 app.use(createPinia());
 app.use(router);
 
