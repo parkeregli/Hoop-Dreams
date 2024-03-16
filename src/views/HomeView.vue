@@ -1,13 +1,13 @@
 <template>
-  <div class="row flex align-items-center justify-content-between">
-    <div class="w-full">
-      <TeamDisplay :players="homePlayers" :name="'Home'" />
+  <div class="flex align-items-stretch justify-content-between h-22rem">
+    <div class="w-full h-full">
+      <TeamDisplay class="h-full" :players="homePlayers" :name="'Home'" />
     </div>
-    <div class="w-full">
-      <TeamStats :players="awayPlayers" :name="'Team Stats'" />
+    <div class="w-full h-full">
+      <TeamStats class="h-full" :teamStats="teamStats" />
     </div>
-    <div class="w-full">
-      <TeamDisplay :players="awayPlayers" :name="'Away'" />
+    <div class="w-full h-full">
+      <TeamDisplay class="h-full" :players="awayPlayers" :name="'Away'" />
     </div>
   </div>
 
@@ -37,11 +37,15 @@ const awayPlayers = [
 ];
 
 const teamStats = [
-  { position: "PG", name: "Player Name" },
-  { position: "SG", name: "Player Name" },
-  { position: "SF", name: "Player Name" },
-  { position: "PF", name: "Player Name" },
-  { position: "C", name: "Player Name" },
+  { stat: "Team", home: "Home Logo", away: "Away Logo" },
+  { stat: "FG", home: "Home", away: "Away" },
+  { stat: "FG %", home: "Home", away: "Away" },
+  { stat: "3PT", home: "Home", away: "Away" },
+  { stat: "3PT %", home: "Home", away: "Away" },
+  { stat: "FT", home: "Home", away: "Away" },
+  { stat: "FT  %", home: "Home", away: "Away" },
+  { stat: "REB", home: "Home", away: "Away" },
+  { stat: "TO", home: "Home", away: "Away" },
 ];
 </script>
 
