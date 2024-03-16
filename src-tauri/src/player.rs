@@ -1,9 +1,9 @@
 use std::fmt;
 
-#[derive(Debug, Copy, Clone)]
-pub struct Player<'a> {
-    name: &'a str,
-    position: &'a str,
+#[derive(Debug, Clone)]
+pub struct Player {
+    name: String,
+    position: String,
     age: u8,
     height: u8,
     weight: u16,
@@ -15,10 +15,10 @@ pub struct Player<'a> {
     rebounding: u8,
 }
 
-impl<'a> Player<'a> {
+impl Player {
     pub fn new(
-        name: &'a str,
-        position: &'a str,
+        name: String,
+        position: String,
         age: u8,
         height: u8,
         weight: u16,
@@ -28,7 +28,7 @@ impl<'a> Player<'a> {
         passing: u8,
         defense: u8,
         rebounding: u8,
-    ) -> Player<'a> {
+    ) -> Player {
         Player {
             name,
             position,
@@ -60,7 +60,7 @@ impl<'a> Player<'a> {
     }
 }
 
-impl fmt::Display for Player<'_> {
+impl fmt::Display for Player {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
