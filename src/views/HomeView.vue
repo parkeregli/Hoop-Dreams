@@ -4,7 +4,7 @@
       <TeamDisplay class="h-full" :players="homePlayers" :name="'Home'" />
     </div>
     <div class="w-full h-full">
-      <TeamStats class="h-full" :teamStats="teamStats" :name="'Team Stats'" />
+      <TeamStats class="h-full" :teamStats="teamStats" />
     </div>
     <div class="w-full h-full">
       <TeamDisplay class="h-full" :players="awayPlayers" :name="'Away'" />
@@ -37,15 +37,15 @@ const awayPlayers = [
 ];
 
 const teamStats = [
-  { stat: "Team", home: "Home Logo", name: "Away Logo" },
-  { stat: "FG", home: "Home", name: "Away" },
-  { stat: "FG %", home: "Home", name: "Away" },
-  { stat: "3PT", home: "Home", name: "Away" },
-  { stat: "3PT %", home: "Home", name: "Away" },
-  { stat: "FT", home: "Home", name: "Away" },
-  { stat: "FT  %", home: "Home", name: "Away" },
-  { stat: "REB", home: "Home", name: "Away" },
-  { stat: "TO", home: "Home", name: "Away" },
+  { stat: "Team", home: "Home Logo", away: "Away Logo" },
+  { stat: "FG", home: "Home", away: "Away" },
+  { stat: "FG %", home: "Home", away: "Away" },
+  { stat: "3PT", home: "Home", away: "Away" },
+  { stat: "3PT %", home: "Home", away: "Away" },
+  { stat: "FT", home: "Home", away: "Away" },
+  { stat: "FT  %", home: "Home", away: "Away" },
+  { stat: "REB", home: "Home", away: "Away" },
+  { stat: "TO", home: "Home", away: "Away" },
 ];
 </script>
 

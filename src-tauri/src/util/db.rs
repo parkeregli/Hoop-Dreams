@@ -1,7 +1,7 @@
 use rusqlite::{Connection, Result};
 
 //Singleton implementation for db
-pub fn init() -> Result<Connection> {
+pub fn init() -> Result<Connection, rusqlite::Error> {
     let conn = Connection::open("HoopDreams.db").unwrap();
     conn.execute(
         "CREATE TABLE IF NOT EXISTS players (
@@ -21,7 +21,8 @@ pub fn init() -> Result<Connection> {
             id INTEGER PRIMARY KEY,
             name TEXT NOT NULL UNIQUE,
             city TEXT NOT NULL UNIQUE
-        )",
+        );
+        ",
         [],
     )?;
 

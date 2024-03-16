@@ -10,11 +10,11 @@ use team::Team;
 use util::db;
 
 fn main() {
-    let _db = db::init().unwrap();
+    let db = db::init().expect("Could not connect to database");
 
     let _court = Court::new();
 
-    let _team = Team::new(String::from("Cavs"), String::from("Cleveland"));
+    let teams = Team::get_teams_from_db(&db).unwrap();
 
     tauri::Builder::default()
         .run(tauri::generate_context!())
