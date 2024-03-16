@@ -1,5 +1,5 @@
 <template>
-  <card class="homeAway">
+  <card class="homeAway border-solid border-cyan-600">
     <template #title>
       <h1 class="title">{{ name }}</h1>
     </template>

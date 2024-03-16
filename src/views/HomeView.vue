@@ -1,13 +1,13 @@
 <template>
-  <div class="row flex align-items-center justify-content-between">
-    <div class="w-full">
-      <TeamDisplay :players="homePlayers" :name="'Home'" />
+  <div class="flex align-items-stretch justify-content-between h-22rem">
+    <div class="w-full h-full">
+      <TeamDisplay class="h-full" :players="homePlayers" :name="'Home'" />
     </div>
-    <div class="w-full">
-      <TeamStats :teamStats="teamStats" :name="'Team Stats'" />
+    <div class="w-full h-full">
+      <TeamStats class="h-full" :teamStats="teamStats" :name="'Team Stats'" />
     </div>
-    <div class="w-full">
-      <TeamDisplay :players="awayPlayers" :name="'Away'" />
+    <div class="w-full h-full">
+      <TeamDisplay class="h-full" :players="awayPlayers" :name="'Away'" />
     </div>
   </div>
 
@@ -37,6 +37,7 @@ const awayPlayers = [
 ];
 
 const teamStats = [
+  { stat: "Team", home: "Home Logo", name: "Away Logo" },
   { stat: "FG", home: "Home", name: "Away" },
   { stat: "FG %", home: "Home", name: "Away" },
   { stat: "3PT", home: "Home", name: "Away" },
