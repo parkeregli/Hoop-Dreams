@@ -2,34 +2,28 @@ use rusqlite::{Connection, Result};
 
 //Singleton implementation for db
 pub fn init() -> Result<Connection> {
-    let conn = Connection::open("ball.db").unwrap();
+    let conn = Connection::open("HoopDreams.db").unwrap();
     conn.execute(
         "CREATE TABLE IF NOT EXISTS players (
             id INTEGER PRIMARY KEY,
-            name TEXT NOT NULL,
+            first_name TEXT NOT NULL,
+            last_name TEXT NOT NULL,
             position TEXT NOT NULL,
             age INTEGER NOT NULL,
             height INTEGER NOT NULL,
-            weight INTEGER NOT NULL,
-            pts INTEGER NOT NULL,
-            reb INTEGER NOT NULL,
-            ast INTEGER NOT NULL,
-            stl INTEGER NOT NULL,
-            blk INTEGER NOT NULL
+            weight INTEGER NOT NULL
         )",
         [],
-    )
-    .unwrap();
+    )?;
 
     conn.execute(
         "CREATE TABLE IF NOT EXISTS teams (
             id INTEGER PRIMARY KEY,
-            name TEXT NOT NULL,
-            location TEXT NOT NULL
+            name TEXT NOT NULL UNIQUE,
+            city TEXT NOT NULL UNIQUE
         )",
         [],
-    )
-    .unwrap();
+    )?;
 
     conn.execute(
         "CREATE TABLE IF NOT EXISTS team_players (
@@ -38,8 +32,7 @@ pub fn init() -> Result<Connection> {
             player_id INTEGER NOT NULL
         )",
         [],
-    )
-    .unwrap();
+    )?;
 
     conn.execute(
         "CREATE TABLE IF NOT EXISTS team_bench (
@@ -48,8 +41,7 @@ pub fn init() -> Result<Connection> {
             player_id INTEGER NOT NULL
         )",
         [],
-    )
-    .unwrap();
+    )?;
 
     conn.execute(
         "CREATE TABLE IF NOT EXISTS team_starting_lineup (
@@ -58,8 +50,7 @@ pub fn init() -> Result<Connection> {
             player_id INTEGER NOT NULL
         )",
         [],
-    )
-    .unwrap();
+    )?;
 
     Ok(conn)
 }

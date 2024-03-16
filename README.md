@@ -11,6 +11,13 @@ To get started with the development of the Indie Basketball Manager Sim, follow 
 - Node.js
 - Rust
 - Tauri
+
+Here is also some documentation for some of the stack we are using:
+- [Vue](https://vuejs.org/guide/introduction) 
+   - UI Library
+      - [Primevue](https://primevue.org/)
+         - Plugins
+            - [Primeflex](https://primeflex.org/) 
 3. Open a terminal and navigate to the project directory.
 4. Run the following command to install the necessary dependencies:
 
