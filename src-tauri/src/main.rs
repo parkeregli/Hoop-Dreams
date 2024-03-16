@@ -16,6 +16,10 @@ fn main() {
 
     let teams = Team::get_teams_from_db(&db).unwrap();
 
+    for team in teams {
+        println!("{}", team);
+    }
+
     tauri::Builder::default()
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

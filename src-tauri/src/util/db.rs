@@ -22,6 +22,10 @@ pub fn init() -> Result<Connection, rusqlite::Error> {
             name TEXT NOT NULL UNIQUE,
             city TEXT NOT NULL UNIQUE
         );
+
+        INSERT OR IGNORE INTO teams (name, city) VALUES ('Cavaliers', 'Cleveland');
+
+        INSERT OR IGNORE INTO teams (name, city) VALUES ('Rockets', 'Houston');
         ",
         [],
     )?;
