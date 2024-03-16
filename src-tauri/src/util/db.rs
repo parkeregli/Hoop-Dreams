@@ -2,7 +2,7 @@ use rusqlite::{Connection, Result};
 
 //Singleton implementation for db
 pub fn init() -> Result<Connection> {
-    let conn = Connection::open("ball.db").unwrap();
+    let conn = Connection::open("HoopDreams.db").unwrap();
     conn.execute(
         "CREATE TABLE IF NOT EXISTS players (
             id INTEGER PRIMARY KEY,

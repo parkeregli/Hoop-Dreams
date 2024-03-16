@@ -12,6 +12,7 @@
     "type-check": "vue-tsc --build --force"
   },
   "dependencies": {
+    "@tauri-apps/api": "^1.5.3",
     "pinia": "^2.1.7",
     "primeflex": "^3.3.1",
     "primeicons": "^6.0.1",
