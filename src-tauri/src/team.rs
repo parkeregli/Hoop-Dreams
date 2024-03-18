@@ -1,7 +1,7 @@
 use rusqlite::Connection;
 use std::fmt;
 
-#[derive(Debug)]
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct Team {
     name: String,
     city: String,
@@ -13,7 +13,7 @@ impl Team {
     }
 
     pub fn write_to_db(&self, db: &Connection) -> Result<(), rusqlite::Error> {
-        let mut stmt = db.prepare("INSERT INTO teams (name, city) VALUES (?, ?)")?;
+        let mut stmt = db.prepare("INSERT OR IGNORE INTO teams (name, city) VALUES (?, ?)")?;
         stmt.execute([&self.name, &self.city])?;
 
         Ok(())

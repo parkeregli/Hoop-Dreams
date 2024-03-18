@@ -1,13 +1,13 @@
 <template>
   <div class="flex align-items-stretch justify-content-between h-22rem">
     <div class="w-full h-full">
-      <TeamDisplay class="h-full" :players="homePlayers" :name="'Home'" />
+      <TeamDisplay class="h-full" :players="homePlayers" :name="teams[0].name" />
     </div>
     <div class="w-full h-full">
       <TeamStats class="h-full" :teamStats="teamStats" />
     </div>
     <div class="w-full h-full">
-      <TeamDisplay class="h-full" :players="awayPlayers" :name="'Away'" />
+      <TeamDisplay class="h-full" :players="awayPlayers" :name="teams[1].name" />
     </div>
   </div>
 
@@ -17,6 +17,11 @@
 </template>
 
 <script setup lang="ts">
+import { invoke } from "@tauri-apps/api/tauri";
+import { ref, onMounted } from "vue";
+
+const teams = ref([]);
+
 import GameCast from "@/components/GameCast.vue";
 import TeamDisplay from "@/components/TeamDisplay.vue";
 import TeamStats from "@/components/TeamStats.vue";
@@ -47,6 +52,19 @@ const teamStats = [
   { stat: "REB", home: "Home", away: "Away" },
   { stat: "TO", home: "Home", away: "Away" },
 ];
+
+const getTeams = async () => {
+  try {
+    const teamRes = await invoke("get_teams");
+    teams.value = teamRes;
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+onMounted(async () => {
+  await getTeams();
+});
 </script>
 
 <style scoped>

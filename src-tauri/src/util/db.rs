@@ -1,8 +1,17 @@
 use rusqlite::{Connection, Result};
+use std::fs;
+use tauri::AppHandle;
 
 //Singleton implementation for db
-pub fn init() -> Result<Connection, rusqlite::Error> {
-    let conn = Connection::open("HoopDreams.db").unwrap();
+pub fn init(app_handle: &AppHandle) -> Result<Connection, rusqlite::Error> {
+    let app_dir = app_handle
+        .path_resolver()
+        .app_data_dir()
+        .expect("The app data directory should exist.");
+    fs::create_dir_all(&app_dir).expect("The app data directory should be created.");
+    let sqlite_path = app_dir.join("HoopDreams.sqlite");
+    let conn = Connection::open(sqlite_path)?;
+
     conn.execute(
         "CREATE TABLE IF NOT EXISTS players (
             id INTEGER PRIMARY KEY,
@@ -12,7 +21,8 @@ pub fn init() -> Result<Connection, rusqlite::Error> {
             age INTEGER NOT NULL,
             height INTEGER NOT NULL,
             weight INTEGER NOT NULL
-        )",
+        );
+        ",
         [],
     )?;
 
@@ -23,9 +33,9 @@ pub fn init() -> Result<Connection, rusqlite::Error> {
             city TEXT NOT NULL UNIQUE
         );
 
-        INSERT OR IGNORE INTO teams (name, city) VALUES ('Cavaliers', 'Cleveland');
+        INSERT INTO teams (name, city) VALUES ('Cavaliers', 'Cleveland');
 
-        INSERT OR IGNORE INTO teams (name, city) VALUES ('Rockets', 'Houston');
+        INSERT INTO teams (name, city) VALUES ('Rockets', 'Houston');
         ",
         [],
     )?;
