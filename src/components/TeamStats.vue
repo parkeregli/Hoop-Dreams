@@ -28,7 +28,7 @@
 </template>
 
 <script setup lang="ts">
-const props = defineProps({ teamStats: []});
+const props = defineProps({ teamStats: {type: Array, default:[]}});
 </script>
 
 <style scoped>

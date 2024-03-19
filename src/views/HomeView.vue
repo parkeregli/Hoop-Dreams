@@ -19,12 +19,11 @@
 <script setup lang="ts">
 import { invoke } from "@tauri-apps/api/tauri";
 import { ref, onMounted } from "vue";
-
-const teams = ref([]);
-
 import GameCast from "@/components/GameCast.vue";
 import TeamDisplay from "@/components/TeamDisplay.vue";
 import TeamStats from "@/components/TeamStats.vue";
+
+const teams = ref([{ name: "Team 1" }, { name: "Team 2" }]);
 const homePlayers = [
   { position: "PG", name: "Player Name" },
   { position: "SG", name: "Player Name" },

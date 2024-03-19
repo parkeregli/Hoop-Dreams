@@ -19,7 +19,7 @@
 </template>
 
 <script setup lang="ts">
-const props = defineProps({ players: [], name: String });
+  const props = defineProps({ players: {type: Array, default:[]}, name: {type: String, default: ""}});
 </script>
 
 <style scoped>
