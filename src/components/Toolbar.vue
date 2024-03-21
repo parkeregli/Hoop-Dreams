@@ -2,9 +2,12 @@
   <Toolbar
     ><template #end>
       <div class="flex align-items-center gap-3 h-1rem">
-        <Button label="Submit" class="p-button-icon"
-          ><i class="pi pi-bars"></i
-        ></Button>
+        <SplitButton
+          label="Options"
+          menuButtonIcon="pi pi-cog"
+          @click="save"
+          :model="items"
+        />
         <Button label="Submit" class="p-button-icon"
           ><i class="pi pi-times"></i
         ></Button>
