@@ -1,62 +1,83 @@
 use std::fmt;
 
-#[derive(Debug, Clone)]
+use rusqlite::{params, Connection};
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Player {
-    name: String,
+    id: Option<i64>,
+    first_name: String,
+    last_name: String,
     position: String,
     age: u8,
     height: u8,
     weight: u16,
-    overall_rating: u8,
-    shooting: u8,
-    dribbling: u8,
-    passing: u8,
-    defense: u8,
-    rebounding: u8,
 }
 
 impl Player {
     pub fn new(
-        name: String,
+        id: Option<i64>,
+        first_name: String,
+        last_name: String,
         position: String,
         age: u8,
         height: u8,
         weight: u16,
-        overall_rating: u8,
-        shooting: u8,
-        dribbling: u8,
-        passing: u8,
-        defense: u8,
-        rebounding: u8,
     ) -> Player {
         Player {
-            name,
+            id,
+            first_name,
+            last_name,
             position,
             age,
             height,
             weight,
-            overall_rating,
-            shooting,
-            dribbling,
-            passing,
-            defense,
-            rebounding,
         }
     }
 
-    pub fn update_rating(&mut self, new_rating: u8) {
-        self.overall_rating = new_rating;
+    pub fn get_id(&self) -> Result<i64, String> {
+        if let Some(id) = self.id {
+            Ok(id)
+        } else {
+            Err(String::from("Player has no id. Write to db first."))
+        }
     }
 
-    pub fn improve_skill(&mut self, skill: &str, amount: u8) {
-        match skill {
-            "shooting" => self.shooting = (self.shooting + amount).min(100),
-            "dribbling" => self.dribbling = (self.dribbling + amount).min(100),
-            "passing" => self.passing = (self.passing + amount).min(100),
-            "defense" => self.defense = (self.defense + amount).min(100),
-            "rebounding" => self.rebounding = (self.rebounding + amount).min(100),
-            _ => println!("Invalid skill"),
-        }
+    pub fn write_to_db(&mut self, conn: &Connection) -> rusqlite::Result<()> {
+        conn.execute(
+            "INSERT OR IGNORE INTO players (first_name, last_name, position, age, height, weight) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            params![
+                self.first_name,
+                self.last_name,
+                self.position,
+                self.age,
+                self.height,
+                self.weight,
+            ],
+        )?;
+        let id = conn.last_insert_rowid();
+        self.id = Some(id);
+        Ok(())
+    }
+
+    pub fn get_all_players_from_db(db: &Connection) -> Result<Vec<Player>, rusqlite::Error> {
+        let mut stmt = db.prepare(
+            "SELECT id, first_name, last_name, position, age, height, weight FROM players",
+        )?;
+        let players: Vec<Player> = stmt
+            .query_map([], |row| {
+                Ok(Player {
+                    id: row.get(0)?,
+                    first_name: row.get(1)?,
+                    last_name: row.get(2)?,
+                    position: row.get(3)?,
+                    age: row.get(4)?,
+                    height: row.get(5)?,
+                    weight: row.get(6)?,
+                })
+            })?
+            .collect::<Result<Vec<Player>, _>>()?;
+        Ok(players)
     }
 }
 
@@ -64,8 +85,8 @@ impl fmt::Display for Player {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "Name: {}, Position: {}, Age: {}, Height: {}, Weight: {}, Overall Rating: {}, Shooting: {}, Dribbling: {}, Passing: {}, Defense: {}, Rebounding: {}",
-            self.name, self.position, self.age, self.height, self.weight, self.overall_rating, self.shooting, self.dribbling, self.passing, self.defense, self.rebounding
+            "Name: {} {}, Position: {}, Age: {}, Height: {}, Weight: {}",
+            self.first_name, self.last_name, self.position, self.age, self.height, self.weight
         )
     }
 }

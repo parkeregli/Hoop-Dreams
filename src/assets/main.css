@@ -4,6 +4,8 @@ body {
   width: 100%;
 }
 #app {
+  /* Need the margin-top to move everything below the titlebar */
+  margin-top: 62px;
   height: 100%;
   width: 100%;
 
