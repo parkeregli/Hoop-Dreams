@@ -16,6 +16,8 @@
   </Toolbar>
 </template>
 
-<script setup lang="ts"></script>
+<script setup lang="ts">
+const items = [{ label: "settings", icon: "pi-bar" }];
+</script>
 
 <style scoped></style>
