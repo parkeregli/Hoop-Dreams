@@ -1,13 +1,13 @@
 <template>
   <div class="flex align-items-stretch justify-content-between h-22rem">
     <div class="w-full h-full">
-      <TeamDisplay class="h-full" :players="homePlayers" :name="teams[0].name" />
+      <TeamDisplay class="h-full" :teamId="teams[0].id" />
     </div>
     <div class="w-full h-full">
       <TeamStats class="h-full" :teamStats="teamStats" />
     </div>
     <div class="w-full h-full">
-      <TeamDisplay class="h-full" :players="awayPlayers" :name="teams[1].name" />
+      <TeamDisplay class="h-full" :teamId="teams[1].id" />
     </div>
   </div>
 
@@ -24,13 +24,6 @@ import TeamDisplay from "@/components/TeamDisplay.vue";
 import TeamStats from "@/components/TeamStats.vue";
 
 const teams = ref([{ name: "Team 1" }, { name: "Team 2" }]);
-const homePlayers = [
-  { position: "PG", name: "Player Name" },
-  { position: "SG", name: "Player Name" },
-  { position: "SF", name: "Player Name" },
-  { position: "PF", name: "Player Name" },
-  { position: "C", name: "Player Name" },
-];
 
 const awayPlayers = [
   { position: "PG", name: "Player Name" },
