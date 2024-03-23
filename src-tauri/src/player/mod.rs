@@ -1,3 +1,6 @@
+pub mod player_attributes;
+pub mod player_stats;
+
 use std::fmt;
 
 use rusqlite::{params, Connection};
@@ -6,12 +9,12 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Player {
     id: Option<i64>,
-    first_name: String,
-    last_name: String,
+    pub first_name: String,
+    pub last_name: String,
     position: String,
     age: u8,
-    height: u8,
-    weight: u16,
+    height: i32,
+    weight: i32,
 }
 
 impl Player {
@@ -21,8 +24,8 @@ impl Player {
         last_name: String,
         position: String,
         age: u8,
-        height: u8,
-        weight: u16,
+        height: i32,
+        weight: i32,
     ) -> Player {
         Player {
             id,
@@ -41,6 +44,10 @@ impl Player {
         } else {
             Err(String::from("Player has no id. Write to db first."))
         }
+    }
+
+    pub fn get_height(&self) -> i32 {
+        self.height
     }
 
     pub fn write_to_db(&mut self, conn: &Connection) -> rusqlite::Result<()> {
@@ -78,6 +85,13 @@ impl Player {
             })?
             .collect::<Result<Vec<Player>, _>>()?;
         Ok(players)
+    }
+
+    pub fn get_player_attributes(
+        &self,
+        db: &Connection,
+    ) -> Result<player_attributes::PlayerAttributes, rusqlite::Error> {
+        player_attributes::PlayerAttributes::get_player_attributes(self, db)
     }
 }
 
