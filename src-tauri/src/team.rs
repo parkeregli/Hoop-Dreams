@@ -71,7 +71,7 @@ impl Team {
     }
 
     pub fn get_starting_lineup(
-        team_id: &i64,
+        &self,
         db: &Connection,
     ) -> Result<Vec<player::Player>, rusqlite::Error> {
         let mut stmt = db.prepare("
@@ -80,7 +80,29 @@ impl Team {
             INNER JOIN players ON team_starting_lineup.player_id = players.id
             WHERE team_id = ?")?;
         let players: Vec<player::Player> = stmt
-            .query_map([team_id], |row| {
+            .query_map([self.id], |row| {
+                Ok(player::Player::new(
+                    row.get(0)?,
+                    row.get(1)?,
+                    row.get(2)?,
+                    row.get(3)?,
+                    row.get(4)?,
+                    row.get(5)?,
+                    row.get(6)?,
+                ))
+            })?
+            .collect::<Result<Vec<player::Player>, _>>()?;
+        Ok(players)
+    }
+
+    pub fn get_bench(&self, db: &Connection) -> Result<Vec<player::Player>, rusqlite::Error> {
+        let mut stmt = db.prepare("
+            SELECT players.id, players.first_name, players.last_name, players.position, players.age, players.height, players.weight
+            FROM team_bench
+            INNER JOIN players ON team_bench.player_id = players.id
+            WHERE team_id = ?")?;
+        let players: Vec<player::Player> = stmt
+            .query_map([self.id], |row| {
                 Ok(player::Player::new(
                     row.get(0)?,
                     row.get(1)?,
