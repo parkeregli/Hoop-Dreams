@@ -17,7 +17,12 @@
 </template>
 
 <script setup lang="ts">
-const items = [{ label: "settings", icon: "pi-bar" }];
+const items = [
+  { label: "Settings", icon: "pi-bar" },
+  { label: "Sound", icon: "pi-bar" },
+  { label: "Help Me", icon: "pi-bar" },
+  { label: "Report a Bug", icon: "pi-bar" },
+];
 </script>
 
 <style scoped></style>
