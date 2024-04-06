@@ -5,12 +5,12 @@
         <SplitButton
           label="Options"
           menuButtonIcon="pi pi-cog"
-          @click="save"
           :model="items"
         />
-        <Button label="Submit" class="p-button-icon"
-          ><i class="pi pi-times"></i
-        ></Button>
+        <router-link to="/">
+          <Button label="Submit" class="p-button-icon"
+            ><i class="pi pi-times"></i></Button
+        ></router-link>
       </div>
     </template>
   </Toolbar>
