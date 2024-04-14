@@ -3,7 +3,7 @@
     <div class="w-full h-full">
       <TeamDisplay class="h-full" :teamId="teams[0].id" />
     </div>
-    <div class="w-full h-full">
+    <div v-if="false" class="w-full h-full">
       <TeamStats class="h-full" :teamStats="teamStats" />
     </div>
     <div class="w-full h-full">
@@ -22,8 +22,12 @@ import { ref, onMounted } from "vue";
 import GameCast from "@/components/GameCast.vue";
 import TeamDisplay from "@/components/TeamDisplay.vue";
 import TeamStats from "@/components/TeamStats.vue";
+import { useRouter, useRoute } from "vue-router";
 
-const teams = ref([{ name: "Team 1" }, { name: "Team 2" }]);
+const router = useRouter();
+
+const teams = [{ name: "Team 1" }, { name: "Team 2" }];
+const loading = ref(false);
 
 const awayPlayers = [
   { position: "PG", name: "Player Name" },
@@ -44,18 +48,25 @@ const teamStats = [
   { stat: "REB", home: "Home", away: "Away" },
   { stat: "TO", home: "Home", away: "Away" },
 ];
-
 const getTeams = async () => {
   try {
+    loading.value = true;
     const teamRes = await invoke("get_teams");
-    teams.value = teamRes;
+    if (teamRes === null) {
+      throw new Error("No teams found");
+    }
+    teams = teamRes;
   } catch (error) {
     console.error(error);
   }
 };
 
 onMounted(async () => {
-  await getTeams();
+  try {
+    await getTeams();
+  } catch (err) {
+    console.error(err);
+  }
 });
 </script>
 
