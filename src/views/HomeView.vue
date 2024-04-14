@@ -1,4 +1,5 @@
 <template>
+  <Toolbar class="mt-5"></Toolbar>
   <div class="flex align-items-stretch justify-content-between h-22rem">
     <div class="w-full h-full">
       <TeamDisplay class="h-full" :teamId="teams[0].id" />
@@ -23,6 +24,7 @@ import GameCast from "@/components/GameCast.vue";
 import TeamDisplay from "@/components/TeamDisplay.vue";
 import TeamStats from "@/components/TeamStats.vue";
 import { useRouter, useRoute } from "vue-router";
+import Toolbar from "@/components/Toolbar.vue";
 
 const router = useRouter();
 
