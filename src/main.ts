@@ -12,6 +12,7 @@ import Card from "primevue/card";
 import DataView from "primevue/dataview";
 import Toolbar from "primevue/toolbar";
 import SplitButton from "primevue/splitbutton";
+import Menu from 'primevue/menu';
 
 import App from "./App.vue";
 import router from "./router";
@@ -29,6 +30,7 @@ app.component("Card", Card);
 app.component("DataView", DataView);
 app.component("Toolbar", Toolbar);
 app.component("SplitButton", SplitButton);
+app.component("Menu", Menu);
 app.use(createPinia());
 app.use(router);
 
