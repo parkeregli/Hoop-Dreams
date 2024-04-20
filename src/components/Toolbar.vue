@@ -1,16 +1,9 @@
 <template>
-  <Toolbar
-    ><template #end>
+  <Toolbar><template #end>
       <div class="flex align-items-center gap-3 h-1rem">
-        <SplitButton
-          label="Options"
-          menuButtonIcon="pi pi-cog"
-          :model="items"
-        />
+        <SplitButton label="Options" menuButtonIcon="pi pi-cog" :model="items" />
         <router-link to="/">
-          <Button label="Submit" class="p-button-icon"
-            ><i class="pi pi-times"></i></Button
-        ></router-link>
+          <Button label="Submit" class="p-button-icon"><i class="pi pi-times"></i></Button></router-link>
       </div>
     </template>
   </Toolbar>

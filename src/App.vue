@@ -17,10 +17,4 @@ document
   <RouterView />
 </template>
 
-<style>
-body {
-  display: flex;
-  align-items: center;
-  background-color: steelblue;
-}
-</style>
+<style></style>

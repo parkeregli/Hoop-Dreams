@@ -1,19 +1,22 @@
 <template>
-  <Toolbar class="mt-5"></Toolbar>
-  <div class="flex align-items-stretch justify-content-between h-22rem">
-    <div class="w-full h-full">
-      <TeamDisplay class="h-full" :teamId="teams[0].id" />
+  <div class="row flex-column justify-content-between align-content-between">
+    <div class="w-full">
+      <Toolbar></Toolbar>
+      <div class="row align-items-stretch justify-content-between h-22rem">
+        <div class="w-full h-full">
+          <TeamDisplay class="h-full" :teamId="teams[0].id" />
+        </div>
+        <div v-if="false" class="w-full h-full">
+          <TeamStats class="h-full" :teamStats="teamStats" />
+        </div>
+        <div class="w-full h-full">
+          <TeamDisplay class="h-full" :teamId="teams[1].id" />
+        </div>
+      </div>
     </div>
-    <div v-if="false" class="w-full h-full">
-      <TeamStats class="h-full" :teamStats="teamStats" />
+    <div class="h-20rem justify-content-center w-full">
+      <GameCast class="h-full" />
     </div>
-    <div class="w-full h-full">
-      <TeamDisplay class="h-full" :teamId="teams[1].id" />
-    </div>
-  </div>
-
-  <div class="absolute bottom-0 justify-content-center w-full">
-    <GameCast />
   </div>
 </template>
 
