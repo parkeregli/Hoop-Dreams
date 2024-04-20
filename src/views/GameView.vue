@@ -2,7 +2,7 @@
   <div class="row flex-column justify-content-between align-content-between">
     <div class="w-full">
       <Toolbar></Toolbar>
-      <div class="row align-items-stretch justify-content-between h-22rem">
+      <div v-if="teams.length > 0" class="row align-items-stretch justify-content-between h-22rem">
         <div class="w-full h-full">
           <TeamDisplay class="h-full" :teamId="teams[0].id" />
         </div>
@@ -31,16 +31,8 @@ import Toolbar from "@/components/Toolbar.vue";
 
 const router = useRouter();
 
-const teams = [{ name: "Team 1" }, { name: "Team 2" }];
+const teams = ref([]);
 const loading = ref(false);
-
-const awayPlayers = [
-  { position: "PG", name: "Player Name" },
-  { position: "SG", name: "Player Name" },
-  { position: "SF", name: "Player Name" },
-  { position: "PF", name: "Player Name" },
-  { position: "C", name: "Player Name" },
-];
 
 const teamStats = [
   { stat: "Team", home: "Home Logo", away: "Away Logo" },
@@ -60,7 +52,7 @@ const getTeams = async () => {
     if (teamRes === null) {
       throw new Error("No teams found");
     }
-    teams = teamRes;
+    teams.value = teamRes;
   } catch (error) {
     console.error(error);
   }
