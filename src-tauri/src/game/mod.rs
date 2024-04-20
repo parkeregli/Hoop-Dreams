@@ -1,7 +1,7 @@
-pub mod game_event;
-
 use rusqlite::Connection;
 
+pub mod event;
+use crate::game::event::game_event;
 use crate::team::Team;
 
 pub struct Game<'a> {
