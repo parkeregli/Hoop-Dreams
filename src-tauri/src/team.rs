@@ -1,4 +1,4 @@
-use crate::player;
+use crate::player::{self, player_attributes::gen_rand_attrs};
 use rusqlite::Connection;
 use std::fmt;
 
@@ -89,6 +89,7 @@ impl Team {
                     row.get(4)?,
                     row.get(5)?,
                     row.get(6)?,
+                    gen_rand_attrs(),
                 ))
             })?
             .collect::<Result<Vec<player::Player>, _>>()?;
@@ -111,6 +112,7 @@ impl Team {
                     row.get(4)?,
                     row.get(5)?,
                     row.get(6)?,
+                    gen_rand_attrs(),
                 ))
             })?
             .collect::<Result<Vec<player::Player>, _>>()?;

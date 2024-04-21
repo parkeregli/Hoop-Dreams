@@ -1,4 +1,5 @@
 use crate::player;
+use crate::player::player_attributes::gen_rand_attrs;
 use crate::team;
 use rusqlite::{Connection, Result};
 use std::fs;
@@ -85,6 +86,7 @@ pub fn init(app_handle: &AppHandle) -> Result<Connection, rusqlite::Error> {
                 37,
                 6,
                 250,
+                gen_rand_attrs(),
             ),
             player::Player::new(
                 None,
@@ -94,6 +96,7 @@ pub fn init(app_handle: &AppHandle) -> Result<Connection, rusqlite::Error> {
                 28,
                 6,
                 190,
+                gen_rand_attrs(),
             ),
             player::Player::new(
                 None,
@@ -103,6 +106,7 @@ pub fn init(app_handle: &AppHandle) -> Result<Connection, rusqlite::Error> {
                 32,
                 6,
                 200,
+                gen_rand_attrs(),
             ),
             player::Player::new(
                 None,
@@ -112,6 +116,7 @@ pub fn init(app_handle: &AppHandle) -> Result<Connection, rusqlite::Error> {
                 23,
                 6,
                 225,
+                gen_rand_attrs(),
             ),
             player::Player::new(
                 None,
@@ -121,6 +126,7 @@ pub fn init(app_handle: &AppHandle) -> Result<Connection, rusqlite::Error> {
                 33,
                 6,
                 175,
+                gen_rand_attrs(),
             ),
             player::Player::new(
                 None,
@@ -130,6 +136,7 @@ pub fn init(app_handle: &AppHandle) -> Result<Connection, rusqlite::Error> {
                 29,
                 6,
                 225,
+                gen_rand_attrs(),
             ),
             player::Player::new(
                 None,
@@ -139,6 +146,7 @@ pub fn init(app_handle: &AppHandle) -> Result<Connection, rusqlite::Error> {
                 26,
                 6,
                 220,
+                gen_rand_attrs(),
             ),
             player::Player::new(
                 None,
@@ -148,6 +156,7 @@ pub fn init(app_handle: &AppHandle) -> Result<Connection, rusqlite::Error> {
                 29,
                 6,
                 220,
+                gen_rand_attrs(),
             ),
             player::Player::new(
                 None,
@@ -157,6 +166,7 @@ pub fn init(app_handle: &AppHandle) -> Result<Connection, rusqlite::Error> {
                 32,
                 6,
                 215,
+                gen_rand_attrs(),
             ),
             player::Player::new(
                 None,
@@ -166,6 +176,7 @@ pub fn init(app_handle: &AppHandle) -> Result<Connection, rusqlite::Error> {
                 34,
                 6,
                 220,
+                gen_rand_attrs(),
             ),
         ];
         let teams = team::Team::get_teams_from_db(&conn)?;

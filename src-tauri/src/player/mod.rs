@@ -1,10 +1,9 @@
 pub mod player_attributes;
 pub mod player_stats;
 
-use std::fmt;
-
 use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
+use std::fmt;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Player {
@@ -15,6 +14,7 @@ pub struct Player {
     age: u8,
     height: i32,
     weight: i32,
+    attributes: player_attributes::PlayerAttributes,
 }
 
 impl Player {
@@ -26,6 +26,7 @@ impl Player {
         age: u8,
         height: i32,
         weight: i32,
+        attributes: player_attributes::PlayerAttributes,
     ) -> Player {
         Player {
             id,
@@ -35,6 +36,7 @@ impl Player {
             age,
             height,
             weight,
+            attributes,
         }
     }
 
@@ -81,6 +83,7 @@ impl Player {
                     age: row.get(4)?,
                     height: row.get(5)?,
                     weight: row.get(6)?,
+                    attributes: player_attributes::gen_rand_attrs(),
                 })
             })?
             .collect::<Result<Vec<Player>, _>>()?;
