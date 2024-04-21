@@ -1,6 +1,19 @@
 <template>
   <Card class="card">
     <template #title>
+      <div class="flex flex-wrap gap-3">
+        <div>
+          <Button label="Submit" class="p-button-icon"
+            ><i class="pi pi-play"></i
+          ></Button>
+        </div>
+        <div>
+          <Button label="Submit" class="p-button-icon"
+            ><i class="pi pi-stop"></i
+          ></Button>
+        </div>
+      </div>
+
       <h1 class="title">Game Cast</h1>
     </template>
     <template #content>
