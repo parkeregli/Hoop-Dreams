@@ -12,7 +12,6 @@ pub struct GameEvent {
     pub time: Duration,
     pub period: u8,
     pub possession: Option<String>,
-    pub starters: (Vec<Player>, Vec<Player>),
 }
 
 impl GameEvent {
@@ -22,7 +21,6 @@ impl GameEvent {
         time: Duration,
         period: u8,
         possession: Option<String>,
-        starters: (Vec<Player>, Vec<Player>),
     ) -> GameEvent {
         GameEvent {
             has_ball,
@@ -30,7 +28,6 @@ impl GameEvent {
             time,
             period,
             possession,
-            starters,
         }
     }
 
@@ -50,6 +47,7 @@ impl GameEvent {
                 return Ok(());
             } else {
                 //Dribble
+
                 return Ok(());
             }
         }

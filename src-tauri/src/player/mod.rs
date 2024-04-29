@@ -1,4 +1,5 @@
 pub mod player_attributes;
+pub mod player_state;
 pub mod player_stats;
 
 use rusqlite::{params, Connection};

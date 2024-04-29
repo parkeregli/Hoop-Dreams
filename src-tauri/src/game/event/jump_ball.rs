@@ -1,11 +1,10 @@
-use crate::game::game_event;
 use crate::game::game_event::GameEvent;
 use crate::game::Game;
 use crate::player::player_attributes;
+use crate::player::player_state::{PlayerAction, PlayerState};
 use crate::util::rng::rng;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
-use rand::RngCore;
 use rusqlite::Connection;
 
 use std::collections::HashMap;
@@ -13,7 +12,7 @@ use std::time::Duration;
 
 pub fn generate_jump_ball(game: &mut Game, db: &Connection) -> Result<(), String> {
     // Jump Ball
-    let (home_starting_lineup, away_starting_lineup) = (
+    let starters = (
         game.teams
             .0
             .get_starting_lineup(db)
@@ -23,6 +22,7 @@ pub fn generate_jump_ball(game: &mut Game, db: &Connection) -> Result<(), String
             .get_starting_lineup(db)
             .expect("Error getting starting lineups"),
     );
+    game.set_players_in_play(starters);
 
     let mut best_jmp = HashMap::new();
 
@@ -32,7 +32,7 @@ pub fn generate_jump_ball(game: &mut Game, db: &Connection) -> Result<(), String
 
     //Return the best jumper and the ratio
     //Map starting lineup with jmp_ball_ratio
-    for player in &home_starting_lineup {
+    for player in &game.players_in_play.0 {
         //Get player with best jmp + height
         let player_attributes = player_attributes::gen_rand_attrs();
         let jmp_ball_ratio = player_attributes.ath + player.get_height();
@@ -42,7 +42,7 @@ pub fn generate_jump_ball(game: &mut Game, db: &Connection) -> Result<(), String
         }
     }
 
-    for player in &away_starting_lineup {
+    for player in &game.players_in_play.1 {
         //Get player with best jmp + height
         let player_attributes = player_attributes::gen_rand_attrs();
         let jmp_ball_ratio = player_attributes.ath + player.get_height();
@@ -62,7 +62,24 @@ pub fn generate_jump_ball(game: &mut Game, db: &Connection) -> Result<(), String
     if winner == 0 {
         //Home
         //Using clone for now. It is not performant.
-        let has_ball = home_starting_lineup.choose(&mut rng).unwrap();
+        let has_ball = game.players_in_play.0.choose(&mut rng).unwrap();
+        //Find index of has_ball in players_in_play by id
+        let mut team_state: (Vec<PlayerState>, Vec<PlayerState>) = (vec![], vec![]);
+        game.players_in_play.0.iter().for_each(|p| {
+            println!(
+                "{:?}, {:?}",
+                p.get_id().unwrap(),
+                has_ball.get_id().unwrap()
+            );
+            if p.get_id().unwrap() == has_ball.get_id().unwrap() {
+                team_state.0.push(PlayerState::new(true, true));
+                team_state.1.push(PlayerState::new(false, true));
+            } else {
+                team_state.0.push(PlayerState::new(true, false));
+                team_state.1.push(PlayerState::new(false, false));
+            }
+        });
+        game.state = team_state;
         let event = GameEvent::new(
             has_ball.clone(),
             format!(
@@ -76,12 +93,28 @@ pub fn generate_jump_ball(game: &mut Game, db: &Connection) -> Result<(), String
             Duration::from_secs(60 * 12),
             1,
             Some("Home".to_string()),
-            (home_starting_lineup, away_starting_lineup),
         );
         println!("Event: {:?}", event.action);
         game.events.push(event);
     } else {
-        let has_ball = away_starting_lineup.choose(&mut rng).unwrap();
+        let has_ball = game.players_in_play.1.choose(&mut rng).unwrap();
+
+        let mut team_state: (Vec<PlayerState>, Vec<PlayerState>) = (vec![], vec![]);
+        game.players_in_play.1.iter().for_each(|p| {
+            println!(
+                "{:?}, {:?}",
+                p.get_id().unwrap(),
+                has_ball.get_id().unwrap()
+            );
+            if p.get_id().unwrap() == has_ball.get_id().unwrap() {
+                team_state.1.push(PlayerState::new(true, true));
+                team_state.0.push(PlayerState::new(false, true));
+            } else {
+                team_state.1.push(PlayerState::new(true, false));
+                team_state.0.push(PlayerState::new(false, false));
+            }
+        });
+        game.state = team_state;
         let event = GameEvent::new(
             has_ball.clone(),
             format!(
@@ -95,11 +128,18 @@ pub fn generate_jump_ball(game: &mut Game, db: &Connection) -> Result<(), String
             Duration::from_secs(60 * 12),
             1,
             Some("Away".to_string()),
-            (home_starting_lineup, away_starting_lineup),
         );
         println!("Event: {:?}", event.action);
         game.events.push(event);
     }
 
+    println!("Team 0 State:");
+    game.state.0.iter().for_each(|p| {
+        println!("{:?}", p);
+    });
+    println!("Team 1 State:");
+    game.state.1.iter().for_each(|p| {
+        println!("{:?}", p);
+    });
     return Ok(());
 }
