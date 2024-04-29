@@ -1,6 +1,17 @@
 <template>
   <Card class="card">
     <template #title>
+      <div class="flex flex-wrap gap-3">
+        <div class="flex justify-content-center text-white">
+          <ToggleButton
+            v-model="checked"
+            class="w-6rem"
+            onLabel="Pause"
+            offLabel="Play"
+          />
+        </div>
+      </div>
+
       <h1 class="title">Game Cast</h1>
     </template>
     <template #content>
@@ -24,6 +35,10 @@ const items = [
   { timestamp: "2:00", name: "Item 2" },
   { timestamp: "3:00", name: "Item 3" },
 ];
+
+import { ref } from "vue";
+
+const checked = ref(false);
 </script>
 
 <style scoped>
