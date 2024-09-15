@@ -91,11 +91,8 @@ impl Player {
         Ok(players)
     }
 
-    pub fn get_player_attributes(
-        &self,
-        db: &Connection,
-    ) -> Result<player_attributes::PlayerAttributes, rusqlite::Error> {
-        player_attributes::PlayerAttributes::get_player_attributes(self, db)
+    pub fn get_player_attributes(&self) -> player_attributes::PlayerAttributes {
+        self.attributes.clone()
     }
 }
 

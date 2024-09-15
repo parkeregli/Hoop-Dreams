@@ -1,3 +1,4 @@
+use crate::player::Player;
 use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum PlayerAction {
@@ -8,8 +9,10 @@ pub enum PlayerAction {
     MidShot,
     CornerThree,
     Three,
+    SpotUp,
     Cut,
-    Screen,
+    BallScreen,
+    OffBallScreen,
     Contest,
     Block,
     DefendTight,
@@ -26,21 +29,21 @@ pub struct PlayerState {
 }
 
 impl PlayerState {
-    pub fn new(is_offense: bool, has_ball: bool) -> PlayerState {
+    pub fn new(player: &Player, is_offense: bool, has_ball: bool) -> PlayerState {
         if is_offense {
             PlayerState {
-                action: PlayerState::generate_offensive_player_action(has_ball),
+                action: PlayerState::generate_offensive_player_action(player, has_ball),
                 has_ball,
             }
         } else {
             PlayerState {
-                action: PlayerState::generate_deffensive_player_action(has_ball),
+                action: PlayerState::generate_deffensive_player_action(player, has_ball),
                 has_ball,
             }
         }
     }
-    pub fn generate_offensive_player_action(has_ball: bool) -> PlayerAction {
-        let mut actions = vec![];
+    pub fn generate_offensive_player_action(player: &Player, has_ball: bool) -> PlayerAction {
+        let actions;
         if has_ball {
             actions = vec![
                 PlayerAction::Pass,
@@ -54,15 +57,20 @@ impl PlayerState {
             actions = vec![
                 PlayerAction::Rebound,
                 PlayerAction::Cut,
-                PlayerAction::Screen,
+                PlayerAction::BallScreen,
+                PlayerAction::OffBallScreen,
+                PlayerAction::SpotUp,
             ];
         }
         let index = rand::random::<usize>() % actions.len();
         actions[index]
     }
 
-    pub fn generate_deffensive_player_action(is_defened_ball: bool) -> PlayerAction {
-        let mut actions = vec![];
+    pub fn generate_deffensive_player_action(
+        player: &Player,
+        is_defened_ball: bool,
+    ) -> PlayerAction {
+        let mut actions;
         if is_defened_ball {
             actions = vec![
                 PlayerAction::Block,

@@ -1,7 +1,6 @@
 use crate::game::event::jump_ball;
 use crate::game::Game;
 use crate::player::Player;
-use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
@@ -31,9 +30,9 @@ impl GameEvent {
         }
     }
 
-    pub fn generate_next_game_event(game: &mut Game, db: &Connection) -> Result<(), String> {
+    pub fn generate_next_game_event(game: &mut Game) -> Result<(), String> {
         if game.events.len() == 0 {
-            jump_ball::generate_jump_ball(game, db)?;
+            let _ = jump_ball::generate_jump_ball(game);
         }
         let last_event = game.events.last().unwrap();
         // Generate next event

@@ -55,9 +55,9 @@ fn main() {
             let teams = team::Team::get_teams_from_db(&db).unwrap();
             let home_team = &teams[0];
             let away_team = &teams[1];
-            let mut game = game::Game::new(home_team, away_team).unwrap();
+            let mut game = game::Game::new(&db, home_team, away_team).unwrap();
 
-            let _ = game.generate_next_game_event(&db).unwrap();
+            let _ = game.generate_next_game_event().unwrap();
 
             *app_state.db.lock().unwrap() = Some(db);
             Ok(())
