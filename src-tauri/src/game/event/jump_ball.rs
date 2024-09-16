@@ -19,8 +19,7 @@ pub fn generate_jump_ball(game: &mut Game) -> Result<(), String> {
     //Map starting lineup with jmp_ball_ratio
     for player in &game.players_in_play.0 {
         //Get player with best jmp + height
-        let player_attributes = player.get_player_attributes();
-        let jmp_ball_ratio = player_attributes.ath + player.get_height();
+        let jmp_ball_ratio = player.attributes().ath + player.get_height();
 
         if jmp_ball_ratio > best_jmp.get("Home").unwrap().1 {
             best_jmp.insert("Home", (Some(player), jmp_ball_ratio));
@@ -29,8 +28,7 @@ pub fn generate_jump_ball(game: &mut Game) -> Result<(), String> {
 
     for player in &game.players_in_play.1 {
         //Get player with best jmp + height
-        let player_attributes = player.get_player_attributes();
-        let jmp_ball_ratio = player_attributes.ath + player.get_height();
+        let jmp_ball_ratio = player.attributes().ath + player.get_height();
 
         if jmp_ball_ratio > best_jmp.get("Away").unwrap().1 {
             best_jmp.insert("Away", (Some(player), jmp_ball_ratio));

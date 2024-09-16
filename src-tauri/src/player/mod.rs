@@ -91,8 +91,8 @@ impl Player {
         Ok(players)
     }
 
-    pub fn get_player_attributes(&self) -> player_attributes::PlayerAttributes {
-        self.attributes.clone()
+    pub fn attributes(&self) -> &player_attributes::PlayerAttributes {
+        &self.attributes
     }
 }
 

@@ -1,3 +1,4 @@
+use crate::game::court::CourtArea;
 use crate::player::Player;
 use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
@@ -26,6 +27,7 @@ pub enum PlayerAction {
 pub struct PlayerState {
     pub action: PlayerAction,
     pub has_ball: bool,
+    pub current_area: CourtArea,
 }
 
 impl PlayerState {
@@ -34,11 +36,13 @@ impl PlayerState {
             PlayerState {
                 action: PlayerState::generate_offensive_player_action(player, has_ball),
                 has_ball,
+                current_area: CourtArea::Center,
             }
         } else {
             PlayerState {
                 action: PlayerState::generate_deffensive_player_action(player, has_ball),
                 has_ball,
+                current_area: CourtArea::Center,
             }
         }
     }
