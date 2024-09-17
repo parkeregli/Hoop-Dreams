@@ -44,8 +44,11 @@ pub fn generate_jump_ball(game: &mut Game) -> Result<(), String> {
     let mut rng = thread_rng();
     if winner == 0 {
         //Home
-        //Using clone for now. It is not performant.
-        let has_ball = game.players_in_play.0.choose(&mut rng).unwrap();
+        let has_ball = game
+            .players_in_play
+            .0
+            .choose(&mut rng)
+            .expect("Error choosing player");
         //Find index of has_ball in players_in_play by id
         let mut team_state: (Vec<PlayerState>, Vec<PlayerState>) = (vec![], vec![]);
         game.players_in_play.0.iter().for_each(|p| {
@@ -73,9 +76,26 @@ pub fn generate_jump_ball(game: &mut Game) -> Result<(), String> {
             Some("Home".to_string()),
         );
         println!("Event: {:?}", event.action);
-        game.events.push(event);
+        game.events.push(GameEvent::new(
+            has_ball.clone(),
+            format!(
+                "Jump Ball won for {} by {} {}. {} {} has the ball.",
+                "Home",
+                best_jmp.get("Home").unwrap().0.unwrap().first_name,
+                best_jmp.get("Home").unwrap().0.unwrap().last_name,
+                &has_ball.first_name,
+                &has_ball.last_name
+            ),
+            Duration::from_secs(60 * 12),
+            1,
+            Some("Home".to_string()),
+        ));
     } else {
-        let has_ball = game.players_in_play.1.choose(&mut rng).unwrap();
+        let has_ball = game
+            .players_in_play
+            .1
+            .choose(&mut rng)
+            .expect("Error choosing player");
 
         let mut team_state: (Vec<PlayerState>, Vec<PlayerState>) = (vec![], vec![]);
         game.players_in_play.1.iter().for_each(|p| {

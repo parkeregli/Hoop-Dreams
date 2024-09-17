@@ -73,13 +73,13 @@ impl Team {
     pub fn get_starting_lineup(
         &self,
         db: &Connection,
-    ) -> Result<Vec<player::Player>, rusqlite::Error> {
+    ) -> Result<[player::Player; 5], rusqlite::Error> {
         let mut stmt = db.prepare("
             SELECT players.id, players.first_name, players.last_name, players.position, players.age, players.height, players.weight
             FROM team_starting_lineup
             INNER JOIN players ON team_starting_lineup.player_id = players.id
             WHERE team_id = ?")?;
-        let players: Vec<player::Player> = stmt
+        let players: [player::Player; 5] = stmt
             .query_map([self.id], |row| {
                 Ok(player::Player::new(
                     row.get(0)?,
@@ -92,7 +92,10 @@ impl Team {
                     gen_rand_attrs(),
                 ))
             })?
-            .collect::<Result<Vec<player::Player>, _>>()?;
+            .collect::<Result<Vec<player::Player>, _>>()?
+            .try_into()
+            //TODO: Add error handling
+            .map_err(|_| rusqlite::Error::QueryReturnedNoRows)?;
         Ok(players)
     }
 

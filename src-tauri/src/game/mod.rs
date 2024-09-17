@@ -14,7 +14,7 @@ pub struct Game<'a> {
     timeouts: (u8, u8),
     events: Vec<game_event::GameEvent>,
     state: (Vec<PlayerState>, Vec<PlayerState>),
-    players_in_play: (Vec<Player>, Vec<Player>),
+    players_in_play: ([Player; 5], [Player; 5]),
     bench: (Vec<Player>, Vec<Player>),
 }
 

@@ -28,7 +28,7 @@ fn get_team(app_handle: AppHandle, team_id: i64) -> team::Team {
 }
 
 #[tauri::command]
-fn get_team_starting_lineup(app_handle: AppHandle, team_id: i64) -> Vec<player::Player> {
+fn get_team_starting_lineup(app_handle: AppHandle, team_id: i64) -> [player::Player; 5] {
     let team = app_handle
         .db(|db| team::Team::get_team(&team_id, db))
         .unwrap();
