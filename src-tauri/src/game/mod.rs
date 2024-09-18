@@ -7,7 +7,6 @@ use crate::game::event::game_event;
 use crate::player::player_state::PlayerState;
 use crate::player::Player;
 use crate::team::Team;
-use std::array;
 use std::time::Duration;
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
@@ -61,14 +60,8 @@ impl Game<'_> {
                 timeouts: (0, 0),
                 players_in_play: starters.clone(),
                 player_states: (
-                    array::from_fn(|i| {
-                        &starters.0[i];
-                        PlayerState::new(false, false, None)
-                    }),
-                    array::from_fn(|i| {
-                        &starters.1[i];
-                        PlayerState::new(false, false, None)
-                    }),
+                    [(); 5].map(|_| PlayerState::new(false, false, None)),
+                    [(); 5].map(|_| PlayerState::new(false, false, None)),
                 ),
 
                 //720 = 12 minutes
@@ -86,11 +79,21 @@ impl Game<'_> {
 
             println!("Team 0 State:");
             for (i, s) in self.state.player_states.0.iter().enumerate() {
-                println!("Player {} State: {:?}", self.state.players_in_play.0[i], s);
+                println!(
+                    "Player: {} {} State: {:?}",
+                    self.state.players_in_play.0[i].first_name,
+                    self.state.players_in_play.0[i].last_name,
+                    s
+                );
             }
             println!("Team 1 State:");
             for (i, s) in self.state.player_states.1.iter().enumerate() {
-                println!("Player {} State: {:?}", self.state.players_in_play.1[i], s);
+                println!(
+                    "Player {} {} State: {:?}",
+                    self.state.players_in_play.1[i].first_name,
+                    self.state.players_in_play.1[i].last_name,
+                    s
+                );
             }
         }
         Ok(())

@@ -27,7 +27,7 @@ impl GameEvent {
         }
         let last_event = game.events.last().unwrap();
         // Generate next event
-        println!("Next event time: {:?}", last_event.time.as_secs());
+        println!("Last event time: {:?}", last_event.time.as_secs());
         if last_event.time.as_secs() > 0 {
             // Check if time is less than 0.3 seconds
             if last_event.time.as_secs() < Duration::from_millis(300).as_secs() {
@@ -50,7 +50,6 @@ impl GameEvent {
                         game.state.possession == Possession::Away,
                     );
                 }
-                println!("Event");
 
                 return Ok(());
             }

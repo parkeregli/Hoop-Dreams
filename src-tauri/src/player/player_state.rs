@@ -1,5 +1,4 @@
 use crate::game::court;
-use crate::player::Player;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
