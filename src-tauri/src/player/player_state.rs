@@ -1,15 +1,16 @@
-use crate::game::court::CourtArea;
+use crate::game::court;
 use crate::player::Player;
 use serde::{Deserialize, Serialize};
+
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum PlayerAction {
     Pass,
     Drive,
     Rebound,
-    InsShot,
-    MidShot,
-    CornerThree,
-    Three,
+    Layup,
+    Dunk,
+    ShotOfDribble,
+    Shot,
     SpotUp,
     Cut,
     BallScreen,
@@ -21,41 +22,61 @@ pub enum PlayerAction {
     DefendLoose,
     Steal,
     Foul,
+    Idle,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct PlayerState {
     pub action: PlayerAction,
     pub has_ball: bool,
-    pub current_area: CourtArea,
+    pub current_area: court::CourtArea,
 }
 
 impl PlayerState {
-    pub fn new(player: &Player, is_offense: bool, has_ball: bool) -> PlayerState {
-        if is_offense {
-            PlayerState {
-                action: PlayerState::generate_offensive_player_action(player, has_ball),
-                has_ball,
-                current_area: CourtArea::Center,
+    pub fn new(is_offense: bool, has_ball: bool, area: Option<court::CourtArea>) -> PlayerState {
+        match area {
+            Some(value) => {
+                if is_offense {
+                    PlayerState {
+                        action: PlayerAction::Idle,
+                        has_ball,
+                        current_area: value,
+                    }
+                } else {
+                    PlayerState {
+                        action: PlayerAction::Idle,
+                        has_ball,
+                        current_area: value,
+                    }
+                }
             }
-        } else {
-            PlayerState {
-                action: PlayerState::generate_deffensive_player_action(player, has_ball),
-                has_ball,
-                current_area: CourtArea::Center,
+            None => {
+                if is_offense {
+                    PlayerState {
+                        action: PlayerAction::Idle,
+                        has_ball,
+                        current_area: court::CourtArea::Center,
+                    }
+                } else {
+                    PlayerState {
+                        action: PlayerAction::Idle,
+                        has_ball,
+                        current_area: court::CourtArea::Center,
+                    }
+                }
             }
         }
     }
-    pub fn generate_offensive_player_action(player: &Player, has_ball: bool) -> PlayerAction {
+    pub fn generate_offensive_player_action(&mut self) {
         let actions;
-        if has_ball {
+        if self.has_ball {
             actions = vec![
                 PlayerAction::Pass,
                 PlayerAction::Drive,
-                PlayerAction::InsShot,
-                PlayerAction::MidShot,
-                PlayerAction::CornerThree,
-                PlayerAction::Three,
+                PlayerAction::Shot,
+                PlayerAction::ShotOfDribble,
+                PlayerAction::Layup,
+                PlayerAction::Dunk,
             ];
         } else {
             actions = vec![
@@ -67,31 +88,33 @@ impl PlayerState {
             ];
         }
         let index = rand::random::<usize>() % actions.len();
-        actions[index]
+        self.action = actions[index]
+    }
+    pub fn generate_defensive_player_action(&mut self) {
+        let actions = vec![
+            PlayerAction::Block,
+            PlayerAction::DefendTight,
+            PlayerAction::Defend,
+            PlayerAction::DefendLoose,
+            PlayerAction::Steal,
+            PlayerAction::Foul,
+        ];
+        let index = rand::random::<usize>() % actions.len();
+        self.action = actions[index]
+    }
+    pub fn generate_player_next_area(&mut self) {
+        let available_areas = court::can_move_to(self.current_area);
+        let index = rand::random::<usize>() % available_areas.len();
+        self.current_area = available_areas.into_iter().nth(index).unwrap()
     }
 
-    pub fn generate_deffensive_player_action(
-        player: &Player,
-        is_defened_ball: bool,
-    ) -> PlayerAction {
-        let mut actions;
-        if is_defened_ball {
-            actions = vec![
-                PlayerAction::Block,
-                PlayerAction::DefendTight,
-                PlayerAction::Defend,
-                PlayerAction::DefendLoose,
-                PlayerAction::Steal,
-            ];
+    pub fn generate_next_player_state(&mut self, is_offense: bool, has_ball: bool) {
+        self.has_ball = has_ball;
+        if is_offense {
+            self.generate_offensive_player_action();
         } else {
-            actions = vec![
-                PlayerAction::DefendTight,
-                PlayerAction::Defend,
-                PlayerAction::DefendLoose,
-                PlayerAction::Rebound,
-            ];
+            self.generate_defensive_player_action();
         }
-        let index = rand::random::<usize>() % actions.len();
-        actions[index]
+        self.generate_player_next_area();
     }
 }

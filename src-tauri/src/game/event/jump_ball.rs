@@ -1,10 +1,7 @@
 use crate::game::game_event::GameEvent;
-use crate::game::Game;
-use crate::player::player_state::PlayerState;
+use crate::game::{Game, Possession};
 use crate::util::rng::rng;
-use rand::seq::SliceRandom;
-use rand::thread_rng;
-
+use rand::{thread_rng, Rng};
 use std::collections::HashMap;
 use std::time::Duration;
 
@@ -17,7 +14,7 @@ pub fn generate_jump_ball(game: &mut Game) -> Result<(), String> {
 
     //Return the best jumper and the ratio
     //Map starting lineup with jmp_ball_ratio
-    for player in &game.players_in_play.0 {
+    for player in &game.state.players_in_play.0 {
         //Get player with best jmp + height
         let jmp_ball_ratio = player.attributes().ath + player.get_height();
 
@@ -26,7 +23,7 @@ pub fn generate_jump_ball(game: &mut Game) -> Result<(), String> {
         }
     }
 
-    for player in &game.players_in_play.1 {
+    for player in &game.state.players_in_play.1 {
         //Get player with best jmp + height
         let jmp_ball_ratio = player.attributes().ath + player.get_height();
 
@@ -43,26 +40,19 @@ pub fn generate_jump_ball(game: &mut Game) -> Result<(), String> {
     println!("Winner: {}", winner);
     let mut rng = thread_rng();
     if winner == 0 {
-        //Home
-        let has_ball = game
-            .players_in_play
-            .0
-            .choose(&mut rng)
-            .expect("Error choosing player");
-        //Find index of has_ball in players_in_play by id
-        let mut team_state: (Vec<PlayerState>, Vec<PlayerState>) = (vec![], vec![]);
-        game.players_in_play.0.iter().for_each(|p| {
-            if p.get_id().unwrap() == has_ball.get_id().unwrap() {
-                team_state.0.push(PlayerState::new(&p, true, true));
-                team_state.1.push(PlayerState::new(&p, false, true));
-            } else {
-                team_state.0.push(PlayerState::new(&p, true, false));
-                team_state.1.push(PlayerState::new(&p, false, false));
-            }
-        });
-        game.state = team_state;
+        game.state.possession = Possession::Home;
+        //Get random index of home team players
+        let home_idx = rng.gen_range(0..5);
+        let has_ball = &game.state.players_in_play.0[home_idx];
+
+        for (i, p) in game.state.player_states.0.iter_mut().enumerate() {
+            p.generate_next_player_state(i == home_idx, true);
+        }
+        for (_, p) in game.state.player_states.1.iter_mut().enumerate() {
+            p.generate_next_player_state(false, false);
+        }
+
         let event = GameEvent::new(
-            has_ball.clone(),
             format!(
                 "Jump Ball won for {} by {} {}. {} {} has the ball.",
                 "Home",
@@ -71,50 +61,25 @@ pub fn generate_jump_ball(game: &mut Game) -> Result<(), String> {
                 &has_ball.first_name,
                 &has_ball.last_name
             ),
-            Duration::from_secs(60 * 12),
+            game.state.time - Duration::from_secs(1),
             1,
-            Some("Home".to_string()),
+            Possession::Home,
         );
         println!("Event: {:?}", event.action);
-        game.events.push(GameEvent::new(
-            has_ball.clone(),
-            format!(
-                "Jump Ball won for {} by {} {}. {} {} has the ball.",
-                "Home",
-                best_jmp.get("Home").unwrap().0.unwrap().first_name,
-                best_jmp.get("Home").unwrap().0.unwrap().last_name,
-                &has_ball.first_name,
-                &has_ball.last_name
-            ),
-            Duration::from_secs(60 * 12),
-            1,
-            Some("Home".to_string()),
-        ));
+        game.events.push(event);
     } else {
-        let has_ball = game
-            .players_in_play
-            .1
-            .choose(&mut rng)
-            .expect("Error choosing player");
+        game.state.possession = Possession::Away;
+        //Get random index of home team players
+        let away_idx = rng.gen_range(0..5);
+        let has_ball = &game.state.players_in_play.1[away_idx];
 
-        let mut team_state: (Vec<PlayerState>, Vec<PlayerState>) = (vec![], vec![]);
-        game.players_in_play.1.iter().for_each(|p| {
-            println!(
-                "{:?}, {:?}",
-                p.get_id().unwrap(),
-                has_ball.get_id().unwrap()
-            );
-            if p.get_id().unwrap() == has_ball.get_id().unwrap() {
-                team_state.1.push(PlayerState::new(&p, true, true));
-                team_state.0.push(PlayerState::new(&p, false, true));
-            } else {
-                team_state.1.push(PlayerState::new(&p, true, false));
-                team_state.0.push(PlayerState::new(&p, false, false));
-            }
-        });
-        game.state = team_state;
+        for (_, p) in game.state.player_states.0.iter_mut().enumerate() {
+            p.generate_next_player_state(false, false);
+        }
+        for (i, p) in game.state.player_states.1.iter_mut().enumerate() {
+            p.generate_next_player_state(i == away_idx, true);
+        }
         let event = GameEvent::new(
-            has_ball.clone(),
             format!(
                 "Jump Ball won for {} by {} {}. {} {} has the ball.",
                 "Away",
@@ -123,9 +88,9 @@ pub fn generate_jump_ball(game: &mut Game) -> Result<(), String> {
                 &has_ball.first_name,
                 &has_ball.last_name
             ),
-            Duration::from_secs(60 * 12),
+            game.state.time - Duration::from_secs(1),
             1,
-            Some("Away".to_string()),
+            Possession::Away,
         );
         println!("Event: {:?}", event.action);
         game.events.push(event);

@@ -1,28 +1,19 @@
-use crate::game::event::jump_ball;
 use crate::game::Game;
-use crate::player::Player;
+use crate::game::{event::jump_ball, Possession};
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GameEvent {
-    pub has_ball: Player,
     pub action: String,
     pub time: Duration,
     pub period: u8,
-    pub possession: Option<String>,
+    pub possession: Possession,
 }
 
 impl GameEvent {
-    pub fn new(
-        has_ball: Player,
-        action: String,
-        time: Duration,
-        period: u8,
-        possession: Option<String>,
-    ) -> GameEvent {
+    pub fn new(action: String, time: Duration, period: u8, possession: Possession) -> GameEvent {
         GameEvent {
-            has_ball,
             action,
             time,
             period,
@@ -36,6 +27,7 @@ impl GameEvent {
         }
         let last_event = game.events.last().unwrap();
         // Generate next event
+        println!("Next event time: {:?}", last_event.time.as_secs());
         if last_event.time.as_secs() > 0 {
             // Check if time is less than 0.3 seconds
             if last_event.time.as_secs() < Duration::from_millis(300).as_secs() {
@@ -46,12 +38,25 @@ impl GameEvent {
                 return Ok(());
             } else {
                 //Dribble
+                for (_, p) in game.state.player_states.0.iter_mut().enumerate() {
+                    p.generate_next_player_state(
+                        p.has_ball,
+                        game.state.possession == Possession::Home,
+                    );
+                }
+                for (_, p) in game.state.player_states.1.iter_mut().enumerate() {
+                    p.generate_next_player_state(
+                        p.has_ball,
+                        game.state.possession == Possession::Away,
+                    );
+                }
+                println!("Event");
 
                 return Ok(());
             }
         }
         if last_event.period >= 4 {
-            if game.score.0 == game.score.1 {
+            if game.state.score.0 == game.state.score.1 {
                 //Overtime
                 return Ok(());
             }

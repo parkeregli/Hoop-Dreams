@@ -1,4 +1,5 @@
 use rusqlite::Connection;
+use serde::{Deserialize, Serialize};
 
 pub mod court;
 pub mod event;
@@ -6,16 +7,30 @@ use crate::game::event::game_event;
 use crate::player::player_state::PlayerState;
 use crate::player::Player;
 use crate::team::Team;
+use std::array;
+use std::time::Duration;
 
-pub struct Game<'a> {
-    teams: (&'a Team, &'a Team),
-    score: (u32, u32),
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
+pub enum Possession {
+    Home,
+    Away,
+    None,
+}
+struct GameState {
+    time: Duration,
+    period: u8,
+    possession: Possession,
+    players_in_play: ([Player; 5], [Player; 5]),
+    player_states: ([PlayerState; 5], [PlayerState; 5]),
+    bench: (Vec<Player>, Vec<Player>),
     fouls: (u8, u8),
     timeouts: (u8, u8),
+    score: (u32, u32),
+}
+pub struct Game<'a> {
+    teams: (&'a Team, &'a Team),
     events: Vec<game_event::GameEvent>,
-    state: (Vec<PlayerState>, Vec<PlayerState>),
-    players_in_play: ([Player; 5], [Player; 5]),
-    bench: (Vec<Player>, Vec<Player>),
+    state: GameState,
 }
 
 impl Game<'_> {
@@ -38,27 +53,45 @@ impl Game<'_> {
         );
         let game = Game {
             teams: (home_team, away_team),
-            score: (0, 0),
-            fouls: (0, 0),
-            timeouts: (0, 0),
+            state: GameState {
+                period: 1,
+                possession: Possession::None,
+                score: (0, 0),
+                fouls: (0, 0),
+                timeouts: (0, 0),
+                players_in_play: starters.clone(),
+                player_states: (
+                    array::from_fn(|i| {
+                        &starters.0[i];
+                        PlayerState::new(false, false, None)
+                    }),
+                    array::from_fn(|i| {
+                        &starters.1[i];
+                        PlayerState::new(false, false, None)
+                    }),
+                ),
+
+                //720 = 12 minutes
+                time: Duration::from_secs(720),
+                bench,
+            },
             events: Vec::new(),
-            state: (Vec::new(), Vec::new()),
-            players_in_play: starters,
-            bench: bench,
         };
         Ok(game)
     }
 
     pub fn generate_next_game_event(&mut self) -> Result<(), String> {
-        let _ = game_event::GameEvent::generate_next_game_event(self);
+        for _ in 0..10 {
+            let _ = game_event::GameEvent::generate_next_game_event(self);
 
-        println!("Team 0 State:");
-        for (i, s) in self.state.0.iter().enumerate() {
-            println!("Player {} State: {:?}", self.players_in_play.0[i], s);
-        }
-        println!("Team 1 State:");
-        for (i, s) in self.state.1.iter().enumerate() {
-            println!("Player {} State: {:?}", self.players_in_play.1[i], s);
+            println!("Team 0 State:");
+            for (i, s) in self.state.player_states.0.iter().enumerate() {
+                println!("Player {} State: {:?}", self.state.players_in_play.0[i], s);
+            }
+            println!("Team 1 State:");
+            for (i, s) in self.state.player_states.1.iter().enumerate() {
+                println!("Player {} State: {:?}", self.state.players_in_play.1[i], s);
+            }
         }
         Ok(())
     }
