@@ -87,7 +87,9 @@ impl Game<'_> {
             let _ = jump_ball::generate_jump_ball(self);
             self.state.time = Duration::from_secs(720);
         }
-        let mut game_end: bool = false;
+        let game_end = self.state.time > Duration::from_secs(0)
+            && self.state.period >= 4
+            && self.state.score.0 != self.state.score.1;
 
         while !game_end {
             //Print score
@@ -113,9 +115,6 @@ impl Game<'_> {
             );
             println!("Home: {}, Away: {}", self.state.score.0, self.state.score.1);
             println!("------------------------------------------------------");
-            game_end = self.state.time == Duration::from_secs(0)
-                && self.state.period >= 4
-                && self.state.score.0 != self.state.score.1;
         }
         Ok(())
     }

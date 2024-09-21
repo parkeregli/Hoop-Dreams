@@ -64,6 +64,21 @@ pub fn generate_jump_ball(game: &mut Game) -> Result<(), String> {
     );
 
     println!("Event: {:?}", event.action);
+    game.state
+        .team_state
+        .iter_mut()
+        .enumerate()
+        .for_each(|(i, s)| {
+            for (_, p) in s.active_players.iter_mut().enumerate() {
+                let is_offense: bool;
+                if game.state.possession == Possession::Home {
+                    is_offense = i == 0;
+                } else {
+                    is_offense = i == 1;
+                }
+                p.1.generate_next_player_state(is_offense, p.1.has_ball)
+            }
+        });
     game.events.push(event);
 
     Ok(())

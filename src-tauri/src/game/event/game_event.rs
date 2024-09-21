@@ -25,13 +25,7 @@ impl GameEvent {
     }
 
     pub fn generate_next_game_event(game: &mut Game) -> Result<(), String> {
-        if game.events.len() == 0 {
-            let _ = jump_ball::generate_jump_ball(game);
-            return Ok(());
-        }
-        let last_event = game.events.last().unwrap();
         // Generate next event
-        println!("Last event time: {:?}", last_event.time.as_secs());
         if game.state.time.as_secs() > 0 {
             // Check if time is less than 0.3 seconds
             if game.state.time.as_secs() < Duration::from_millis(300).as_secs() {
@@ -130,6 +124,14 @@ impl GameEvent {
                             .has_ball = true;
                     }
                 }
+                //Generate random number between 1 and 24 float
+                let mut rng = rand::thread_rng();
+                let random = rng.gen_range(0.0..24.0);
+                if random > game.state.time.as_secs_f32() {
+                    game.state.time = Duration::from_secs(0);
+                } else {
+                    game.state.time = game.state.time - Duration::from_secs_f32(random);
+                }
                 //Generating new state for all players
                 game.state
                     .team_state
@@ -149,16 +151,19 @@ impl GameEvent {
 
                 return Ok(());
             }
-        }
-        if last_event.period >= 4 {
+        } else if game.state.period >= 4 {
             if game.state.score.0 == game.state.score.1 {
                 //Overtime
+                game.state.period += 1;
+                game.state.time = Duration::from_secs(300);
                 return Ok(());
             }
             // Game is over
             return Ok(());
         } else {
             // End of qtr
+            game.state.period += 1;
+            game.state.time = Duration::from_secs(720);
             return Ok(());
         }
     }
