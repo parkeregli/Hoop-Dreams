@@ -6,10 +6,7 @@ use std::time::Duration;
 
 pub fn generate_jump_ball(game: &mut Game) -> Result<(), String> {
     // Collect the necessary data without holding references
-    let home_best = game
-        .state
-        .team_state
-        .0
+    let home_best = game.state.team_state[0]
         .active_players
         .iter()
         .map(|p| {
@@ -22,10 +19,7 @@ pub fn generate_jump_ball(game: &mut Game) -> Result<(), String> {
         .max_by(|a, b| a.0.partial_cmp(&b.0).unwrap_or(std::cmp::Ordering::Equal))
         .ok_or("No home players")?;
 
-    let away_best = game
-        .state
-        .team_state
-        .1
+    let away_best = game.state.team_state[1]
         .active_players
         .iter()
         .map(|p| {
@@ -44,9 +38,9 @@ pub fn generate_jump_ball(game: &mut Game) -> Result<(), String> {
     let mut rng = thread_rng();
 
     let (possession, team_state, best_jumper) = if winner == 0 {
-        (Possession::Home, &mut game.state.team_state.0, home_best)
+        (Possession::Home, &mut game.state.team_state[0], home_best)
     } else {
-        (Possession::Away, &mut game.state.team_state.1, away_best)
+        (Possession::Away, &mut game.state.team_state[1], away_best)
     };
 
     game.state.possession = possession;

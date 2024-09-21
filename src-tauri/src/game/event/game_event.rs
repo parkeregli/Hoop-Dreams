@@ -43,16 +43,13 @@ impl GameEvent {
             } else {
                 //Default
                 if game.state.possession == Possession::Home {
-                    let player_with_ball_index = game
-                        .state
-                        .team_state
-                        .0
+                    let player_with_ball_index = game.state.team_state[0]
                         .active_players
                         .iter()
                         .position(|p| p.1.has_ball)
                         .unwrap();
 
-                    let is_shot = game.state.team_state.0.active_players[player_with_ball_index]
+                    let is_shot = game.state.team_state[0].active_players[player_with_ball_index]
                         .1
                         .is_shot();
                     if is_shot.0 {
@@ -68,37 +65,34 @@ impl GameEvent {
                         game.state.possession = Possession::Away;
                         let mut rng = thread_rng();
                         let player_index = rng.gen_range(0..5);
-                        game.state.team_state.0.active_players[player_with_ball_index]
+                        game.state.team_state[0].active_players[player_with_ball_index]
                             .1
                             .has_ball = false;
-                        game.state.team_state.1.active_players[player_index]
+                        game.state.team_state[1].active_players[player_index]
                             .1
                             .has_ball = true;
                     }
-                    if game.state.team_state.0.active_players[player_with_ball_index]
+                    if game.state.team_state[0].active_players[player_with_ball_index]
                         .1
                         .action
                         == PlayerAction::Pass
                     {
                         let mut rng = thread_rng();
                         let random_index = rng.gen_range(0..5);
-                        game.state.team_state.0.active_players[player_with_ball_index]
+                        game.state.team_state[0].active_players[player_with_ball_index]
                             .1
                             .has_ball = false;
-                        game.state.team_state.0.active_players[random_index]
+                        game.state.team_state[0].active_players[random_index]
                             .1
                             .has_ball = true;
                     }
                 } else if game.state.possession == Possession::Away {
-                    let player_with_ball_index = game
-                        .state
-                        .team_state
-                        .1
+                    let player_with_ball_index = game.state.team_state[1]
                         .active_players
                         .iter()
                         .position(|p| p.1.has_ball)
                         .unwrap();
-                    let is_shot = game.state.team_state.1.active_players[player_with_ball_index]
+                    let is_shot = game.state.team_state[1].active_players[player_with_ball_index]
                         .1
                         .is_shot();
                     if is_shot.0 {
@@ -107,62 +101,51 @@ impl GameEvent {
                         if random < 0.5 {
                             // Shot made
                             println!("Shot Made");
-                            game.state.score.1 += is_shot.1; // Changed to .1 for away team score
+                            game.state.score.1 += is_shot.1;
                         } else {
                             println!("Shot Missed");
                         }
                         game.state.possession = Possession::Home;
                         let mut rng = thread_rng();
                         let player_index = rng.gen_range(0..5);
-                        game.state.team_state.1.active_players[player_with_ball_index]
+                        game.state.team_state[1].active_players[player_with_ball_index]
                             .1
                             .has_ball = false;
-                        game.state.team_state.0.active_players[player_index]
+                        game.state.team_state[0].active_players[player_index]
                             .1
                             .has_ball = true;
                     }
-                    if game.state.team_state.1.active_players[player_with_ball_index]
+                    if game.state.team_state[1].active_players[player_with_ball_index]
                         .1
                         .action
                         == PlayerAction::Pass
                     {
                         let mut rng = thread_rng();
                         let random_index = rng.gen_range(0..5);
-                        game.state.team_state.1.active_players[player_with_ball_index]
+                        game.state.team_state[1].active_players[player_with_ball_index]
                             .1
                             .has_ball = false;
-                        game.state.team_state.1.active_players[random_index]
+                        game.state.team_state[1].active_players[random_index]
                             .1
                             .has_ball = true;
                     }
                 }
                 //Generating new state for all players
-                for (_, p) in game
-                    .state
+                game.state
                     .team_state
-                    .0
-                    .active_players
                     .iter_mut()
                     .enumerate()
-                {
-                    p.1.generate_next_player_state(
-                        game.state.possession == Possession::Home,
-                        p.1.has_ball,
-                    );
-                }
-                for (_, p) in game
-                    .state
-                    .team_state
-                    .1
-                    .active_players
-                    .iter_mut()
-                    .enumerate()
-                {
-                    p.1.generate_next_player_state(
-                        game.state.possession == Possession::Away,
-                        p.1.has_ball,
-                    );
-                }
+                    .for_each(|(i, s)| {
+                        for (_, p) in s.active_players.iter_mut().enumerate() {
+                            let is_offense: bool;
+                            if game.state.possession == Possession::Home {
+                                is_offense = i == 0;
+                            } else {
+                                is_offense = i == 1;
+                            }
+                            p.1.generate_next_player_state(is_offense, p.1.has_ball)
+                        }
+                    });
 
                 return Ok(());
             }

@@ -31,7 +31,7 @@ struct GameState {
     time: Duration,
     period: u8,
     possession: Possession,
-    team_state: (TeamState, TeamState),
+    team_state: [TeamState; 2],
     fouls: (u8, u8),
     timeouts: (u8, u8),
     score: (u8, u8),
@@ -70,7 +70,7 @@ impl Game<'_> {
                 score: (0, 0),
                 fouls: (0, 0),
                 timeouts: (0, 0),
-                team_state: (home_state, away_state),
+                team_state: [home_state, away_state],
                 //720 = 12 minutes
                 time: Duration::from_secs(720),
             },
@@ -84,24 +84,15 @@ impl Game<'_> {
             //Print score
             println!("Possession: {:?}", self.state.possession);
 
-            println!("Team 0 State:");
-            for (i, s) in self.state.team_state.0.active_players.iter().enumerate() {
-                println!(
-                    "Player: {} {} State: {:?}",
-                    self.state.team_state.0.active_players[i].0.first_name,
-                    self.state.team_state.0.active_players[i].0.last_name,
-                    self.state.team_state.0.active_players[i].1
-                );
-            }
-            println!("Team 1 State:");
-            for (i, s) in self.state.team_state.0.active_players.iter().enumerate() {
-                println!(
-                    "Player: {} {} State: {:?}",
-                    self.state.team_state.1.active_players[i].0.first_name,
-                    self.state.team_state.1.active_players[i].0.last_name,
-                    self.state.team_state.1.active_players[i].1
-                );
-            }
+            self.state.team_state.iter().enumerate().for_each(|(i, s)| {
+                println!("Team: {}", if i == 0 { "Home" } else { "Away" },);
+                for (j, p) in s.active_players.iter().enumerate() {
+                    println!(
+                        "Player: {} {} State: {:?}",
+                        p.0.first_name, p.0.last_name, p.1
+                    );
+                }
+            });
             let _ = game_event::GameEvent::generate_next_game_event(self);
             println!("Home: {}, Away: {}", self.state.score.0, self.state.score.1);
             println!("------------------------------------------------------");
