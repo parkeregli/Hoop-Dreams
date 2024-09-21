@@ -1,15 +1,15 @@
 use crate::game::court;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
 pub enum PlayerAction {
     Pass,
     Drive,
     Rebound,
     Layup,
     Dunk,
-    ShotOfDribble,
-    Shot,
+    ShootOfDribble,
+    Shoot,
     SpotUp,
     Cut,
     BallScreen,
@@ -72,8 +72,8 @@ impl PlayerState {
             actions = vec![
                 PlayerAction::Pass,
                 PlayerAction::Drive,
-                PlayerAction::Shot,
-                PlayerAction::ShotOfDribble,
+                PlayerAction::Shoot,
+                PlayerAction::ShootOfDribble,
                 PlayerAction::Layup,
                 PlayerAction::Dunk,
             ];
@@ -88,6 +88,22 @@ impl PlayerState {
         }
         let index = rand::random::<usize>() % actions.len();
         self.action = actions[index]
+    }
+    pub fn is_shot(&self) -> bool {
+        let shot_actions = [
+            PlayerAction::Pass,
+            PlayerAction::Drive,
+            PlayerAction::Shoot,
+            PlayerAction::ShootOfDribble,
+            PlayerAction::Layup,
+            PlayerAction::Dunk,
+        ];
+        match self.action {
+            action if shot_actions.contains(&action) => {
+                return true;
+            }
+            _ => return false,
+        }
     }
     pub fn generate_defensive_player_action(&mut self) {
         let actions = vec![
@@ -115,5 +131,8 @@ impl PlayerState {
             self.generate_defensive_player_action();
         }
         self.generate_player_next_area();
+    }
+    pub fn update_has_ball(&mut self, has_ball: bool) {
+        self.has_ball = has_ball;
     }
 }

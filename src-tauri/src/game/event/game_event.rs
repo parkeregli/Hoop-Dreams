@@ -1,5 +1,8 @@
 use crate::game::Game;
 use crate::game::{event::jump_ball, Possession};
+use crate::player::player_state::{PlayerAction, PlayerState};
+use crate::player::Player;
+use rand::{thread_rng, Rng};
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
@@ -24,30 +27,120 @@ impl GameEvent {
     pub fn generate_next_game_event(game: &mut Game) -> Result<(), String> {
         if game.events.len() == 0 {
             let _ = jump_ball::generate_jump_ball(game);
+            return Ok(());
         }
         let last_event = game.events.last().unwrap();
         // Generate next event
         println!("Last event time: {:?}", last_event.time.as_secs());
-        if last_event.time.as_secs() > 0 {
+        if game.state.time.as_secs() > 0 {
             // Check if time is less than 0.3 seconds
-            if last_event.time.as_secs() < Duration::from_millis(300).as_secs() {
+            if game.state.time.as_secs() < Duration::from_millis(300).as_secs() {
                 //Tip in event
                 return Ok(());
-            } else if last_event.time.as_secs() < Duration::from_millis(500).as_secs() {
+            } else if game.state.time.as_secs() < Duration::from_millis(500).as_secs() {
                 //Enough time for a shot no dribble
                 return Ok(());
             } else {
-                //Dribble
-                for (_, p) in game.state.player_states.0.iter_mut().enumerate() {
-                    p.generate_next_player_state(
-                        p.has_ball,
+                //Default
+
+                if game.state.possession == Possession::Home {
+                    let player_state_has_ball: &mut (Player, PlayerState) = game
+                        .state
+                        .team_state
+                        .0
+                        .active_players
+                        .iter_mut()
+                        .find(|p| p.1.has_ball)
+                        .unwrap();
+
+                    if player_state_has_ball.1.is_shot() {
+                        //Random 50 percent chance of a make
+                        let random = rand::random::<f32>();
+                        if random < 0.5 {
+                            //Shot made
+                            println!("Shot Made");
+                            game.state.score.0 += 1;
+                        } else {
+                            println!("Shot Missed");
+                        }
+                        game.state.possession = Possession::Away;
+                        let mut rng = thread_rng();
+                        let player_index = rng.gen_range(0..5);
+                        player_state_has_ball.1.has_ball = false;
+                        game.state.team_state.1.active_players[player_index]
+                            .1
+                            .has_ball = true;
+                    }
+                    if player_state_has_ball.1.action == PlayerAction::Pass {
+                        let mut rng = thread_rng();
+                        let random_index = rng.gen_range(0..5);
+                        player_state_has_ball.1.has_ball = false;
+                        game.state.team_state.1.active_players[random_index]
+                            .1
+                            .has_ball = true;
+                    }
+                } else if game.state.possession == Possession::Away {
+                    let player_state_has_ball: &mut (Player, PlayerState) = game
+                        .state
+                        .team_state
+                        .1
+                        .active_players
+                        .iter_mut()
+                        .find(|p| p.1.has_ball)
+                        .unwrap();
+                    if player_state_has_ball.1.is_shot() {
+                        //Random 50 percent chance of a make
+                        let random = rand::random::<f32>();
+                        if random < 0.5 {
+                            //Shot made
+                            println!("Shot made");
+                            game.state.score.1 += 1;
+                        } else {
+                            println!("Shot missed");
+                        }
+                        game.state.possession = Possession::Home;
+                        let mut rng = thread_rng();
+                        let player_index = rng.gen_range(0..5);
+                        player_state_has_ball.1.has_ball = false;
+                        game.state.team_state.0.active_players[player_index]
+                            .1
+                            .has_ball = true;
+                    }
+                    if player_state_has_ball.1.action == PlayerAction::Pass {
+                        //Pick random teammate to give ball
+                        let mut rng = thread_rng();
+                        let random_index = rng.gen_range(0..5);
+                        player_state_has_ball.1.has_ball = false;
+                        game.state.team_state.1.active_players[random_index]
+                            .1
+                            .has_ball = true;
+                    }
+                }
+                //Generating new state for all players
+                for (_, p) in game
+                    .state
+                    .team_state
+                    .0
+                    .active_players
+                    .iter_mut()
+                    .enumerate()
+                {
+                    p.1.generate_next_player_state(
                         game.state.possession == Possession::Home,
+                        p.1.has_ball,
                     );
                 }
-                for (_, p) in game.state.player_states.1.iter_mut().enumerate() {
-                    p.generate_next_player_state(
-                        p.has_ball,
+                for (_, p) in game
+                    .state
+                    .team_state
+                    .1
+                    .active_players
+                    .iter_mut()
+                    .enumerate()
+                {
+                    p.1.generate_next_player_state(
                         game.state.possession == Possession::Away,
+                        p.1.has_ball,
                     );
                 }
 

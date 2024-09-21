@@ -2,17 +2,12 @@ use rand::distributions::{Distribution, WeightedIndex};
 use rand::Rng;
 
 pub fn rng(home_value: i32, away_value: i32) -> u8 {
-    println!("Home: {} Away: {}", home_value, away_value);
     // 0 = home, 1 = away
     let sub = home_value - away_value;
     let abs_sub = sub.abs();
     let ratio = abs_sub + 50;
     let mut rng = rand::thread_rng();
     let winner = rng.gen_range(0..100);
-
-    println!("Sub: {}", sub);
-    println!("Ratio: {}", ratio);
-    println!("Rand: {}", winner);
 
     if sub == 0 {
         if winner < 50 {

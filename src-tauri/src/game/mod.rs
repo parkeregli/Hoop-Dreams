@@ -15,13 +15,23 @@ pub enum Possession {
     Away,
     None,
 }
+struct TeamState {
+    active_players: [(Player, PlayerState); 5],
+    bench: (Vec<Player>, Vec<Player>),
+}
+impl TeamState {
+    pub fn new(starters: [Player; 5], bench: Vec<Player>) -> Self {
+        Self {
+            active_players: starters.map(|p| (p, PlayerState::new(false, false, None))),
+            bench: (Vec::new(), Vec::new()),
+        }
+    }
+}
 struct GameState {
     time: Duration,
     period: u8,
     possession: Possession,
-    players_in_play: ([Player; 5], [Player; 5]),
-    player_states: ([PlayerState; 5], [PlayerState; 5]),
-    bench: (Vec<Player>, Vec<Player>),
+    team_state: (TeamState, TeamState),
     fouls: (u8, u8),
     timeouts: (u8, u8),
     score: (u32, u32),
@@ -38,18 +48,20 @@ impl Game<'_> {
         home_team: &'a Team,
         away_team: &'a Team,
     ) -> Result<Game<'a>, rusqlite::Error> {
-        let starters = (
+        let home_players = (
             home_team
                 .get_starting_lineup(db)
                 .expect("Error getting starting lineups"),
+            home_team.get_bench(db).expect("Error getting bench."),
+        );
+        let away_players = (
             away_team
                 .get_starting_lineup(db)
                 .expect("Error getting starting lineups"),
-        );
-        let bench = (
-            home_team.get_bench(db).expect("Error getting bench."),
             away_team.get_bench(db).expect("Error getting bench."),
         );
+        let home_state = TeamState::new(home_players.0, home_players.1);
+        let away_state = TeamState::new(away_players.0, away_players.1);
         let game = Game {
             teams: (home_team, away_team),
             state: GameState {
@@ -58,15 +70,9 @@ impl Game<'_> {
                 score: (0, 0),
                 fouls: (0, 0),
                 timeouts: (0, 0),
-                players_in_play: starters.clone(),
-                player_states: (
-                    [(); 5].map(|_| PlayerState::new(false, false, None)),
-                    [(); 5].map(|_| PlayerState::new(false, false, None)),
-                ),
-
+                team_state: (home_state, away_state),
                 //720 = 12 minutes
                 time: Duration::from_secs(720),
-                bench,
             },
             events: Vec::new(),
         };
@@ -75,26 +81,30 @@ impl Game<'_> {
 
     pub fn generate_next_game_event(&mut self) -> Result<(), String> {
         for _ in 0..10 {
-            let _ = game_event::GameEvent::generate_next_game_event(self);
+            //Print score
+            println!("Possession: {:?}", self.state.possession);
 
             println!("Team 0 State:");
-            for (i, s) in self.state.player_states.0.iter().enumerate() {
+            for (i, s) in self.state.team_state.0.active_players.iter().enumerate() {
                 println!(
                     "Player: {} {} State: {:?}",
-                    self.state.players_in_play.0[i].first_name,
-                    self.state.players_in_play.0[i].last_name,
-                    s
+                    self.state.team_state.0.active_players[i].0.first_name,
+                    self.state.team_state.0.active_players[i].0.last_name,
+                    self.state.team_state.0.active_players[i].1
                 );
             }
             println!("Team 1 State:");
-            for (i, s) in self.state.player_states.1.iter().enumerate() {
+            for (i, s) in self.state.team_state.0.active_players.iter().enumerate() {
                 println!(
-                    "Player {} {} State: {:?}",
-                    self.state.players_in_play.1[i].first_name,
-                    self.state.players_in_play.1[i].last_name,
-                    s
+                    "Player: {} {} State: {:?}",
+                    self.state.team_state.1.active_players[i].0.first_name,
+                    self.state.team_state.1.active_players[i].0.last_name,
+                    self.state.team_state.1.active_players[i].1
                 );
             }
+            let _ = game_event::GameEvent::generate_next_game_event(self);
+            println!("Home: {}, Away: {}", self.state.score.0, self.state.score.1);
+            println!("------------------------------------------------------");
         }
         Ok(())
     }
