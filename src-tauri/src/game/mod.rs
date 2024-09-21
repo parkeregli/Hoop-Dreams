@@ -34,7 +34,7 @@ struct GameState {
     team_state: (TeamState, TeamState),
     fouls: (u8, u8),
     timeouts: (u8, u8),
-    score: (u32, u32),
+    score: (u8, u8),
 }
 pub struct Game<'a> {
     teams: (&'a Team, &'a Team),

@@ -42,75 +42,95 @@ impl GameEvent {
                 return Ok(());
             } else {
                 //Default
-
                 if game.state.possession == Possession::Home {
-                    let player_state_has_ball: &mut (Player, PlayerState) = game
+                    let player_with_ball_index = game
                         .state
                         .team_state
                         .0
                         .active_players
-                        .iter_mut()
-                        .find(|p| p.1.has_ball)
+                        .iter()
+                        .position(|p| p.1.has_ball)
                         .unwrap();
 
-                    if player_state_has_ball.1.is_shot() {
+                    let is_shot = game.state.team_state.0.active_players[player_with_ball_index]
+                        .1
+                        .is_shot();
+                    if is_shot.0 {
                         //Random 50 percent chance of a make
                         let random = rand::random::<f32>();
                         if random < 0.5 {
                             //Shot made
                             println!("Shot Made");
-                            game.state.score.0 += 1;
+                            game.state.score.0 += is_shot.1;
                         } else {
                             println!("Shot Missed");
                         }
                         game.state.possession = Possession::Away;
                         let mut rng = thread_rng();
                         let player_index = rng.gen_range(0..5);
-                        player_state_has_ball.1.has_ball = false;
+                        game.state.team_state.0.active_players[player_with_ball_index]
+                            .1
+                            .has_ball = false;
                         game.state.team_state.1.active_players[player_index]
                             .1
                             .has_ball = true;
                     }
-                    if player_state_has_ball.1.action == PlayerAction::Pass {
+                    if game.state.team_state.0.active_players[player_with_ball_index]
+                        .1
+                        .action
+                        == PlayerAction::Pass
+                    {
                         let mut rng = thread_rng();
                         let random_index = rng.gen_range(0..5);
-                        player_state_has_ball.1.has_ball = false;
-                        game.state.team_state.1.active_players[random_index]
+                        game.state.team_state.0.active_players[player_with_ball_index]
+                            .1
+                            .has_ball = false;
+                        game.state.team_state.0.active_players[random_index]
                             .1
                             .has_ball = true;
                     }
                 } else if game.state.possession == Possession::Away {
-                    let player_state_has_ball: &mut (Player, PlayerState) = game
+                    let player_with_ball_index = game
                         .state
                         .team_state
                         .1
                         .active_players
-                        .iter_mut()
-                        .find(|p| p.1.has_ball)
+                        .iter()
+                        .position(|p| p.1.has_ball)
                         .unwrap();
-                    if player_state_has_ball.1.is_shot() {
-                        //Random 50 percent chance of a make
+                    let is_shot = game.state.team_state.1.active_players[player_with_ball_index]
+                        .1
+                        .is_shot();
+                    if is_shot.0 {
+                        // Random 50 percent chance of a make
                         let random = rand::random::<f32>();
                         if random < 0.5 {
-                            //Shot made
-                            println!("Shot made");
-                            game.state.score.1 += 1;
+                            // Shot made
+                            println!("Shot Made");
+                            game.state.score.1 += is_shot.1; // Changed to .1 for away team score
                         } else {
-                            println!("Shot missed");
+                            println!("Shot Missed");
                         }
                         game.state.possession = Possession::Home;
                         let mut rng = thread_rng();
                         let player_index = rng.gen_range(0..5);
-                        player_state_has_ball.1.has_ball = false;
+                        game.state.team_state.1.active_players[player_with_ball_index]
+                            .1
+                            .has_ball = false;
                         game.state.team_state.0.active_players[player_index]
                             .1
                             .has_ball = true;
                     }
-                    if player_state_has_ball.1.action == PlayerAction::Pass {
-                        //Pick random teammate to give ball
+                    if game.state.team_state.1.active_players[player_with_ball_index]
+                        .1
+                        .action
+                        == PlayerAction::Pass
+                    {
                         let mut rng = thread_rng();
                         let random_index = rng.gen_range(0..5);
-                        player_state_has_ball.1.has_ball = false;
+                        game.state.team_state.1.active_players[player_with_ball_index]
+                            .1
+                            .has_ball = false;
                         game.state.team_state.1.active_players[random_index]
                             .1
                             .has_ball = true;

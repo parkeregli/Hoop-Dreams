@@ -1,4 +1,4 @@
-use crate::game::court;
+use crate::game::court::{self, CourtArea};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
@@ -89,20 +89,52 @@ impl PlayerState {
         let index = rand::random::<usize>() % actions.len();
         self.action = actions[index]
     }
-    pub fn is_shot(&self) -> bool {
+    //Function that returns Some(2, 3) or None
+    pub fn is_shot(&self) -> (bool, u8) {
         let shot_actions = [
-            PlayerAction::Pass,
             PlayerAction::Drive,
             PlayerAction::Shoot,
             PlayerAction::ShootOfDribble,
             PlayerAction::Layup,
             PlayerAction::Dunk,
         ];
+        let two_points = [
+            CourtArea::ElbowLeft,
+            CourtArea::ElbowRight,
+            CourtArea::LowPostLeft,
+            CourtArea::LowPostRight,
+            CourtArea::FreeThrowLine,
+            CourtArea::MidrangeBaselineRight,
+            CourtArea::MidrangeBaselineLeft,
+            CourtArea::RestrictedAreaMiddle,
+            CourtArea::RestrictedAreaRight,
+            CourtArea::RestrictedAreaLeft,
+            CourtArea::MidrangeWingRight,
+            CourtArea::MidrangeWingLeft,
+            CourtArea::ShortCornerRight,
+            CourtArea::ShortCornerLeft,
+            CourtArea::MidrangeCenter,
+        ];
+        let three_points = [
+            CourtArea::ThreePointLineCornerRight,
+            CourtArea::ThreePointLineCornerLeft,
+            CourtArea::ThreePointLineWingRight,
+            CourtArea::ThreePointLineWingLeft,
+            CourtArea::ThreePointLineCenter,
+            CourtArea::Backcourt,
+            CourtArea::Center,
+        ];
         match self.action {
             action if shot_actions.contains(&action) => {
-                return true;
+                if two_points.contains(&self.current_area) {
+                    return (true, 2);
+                } else if three_points.contains(&self.current_area) {
+                    return (true, 3);
+                } else {
+                    return (false, 0);
+                }
             }
-            _ => return false,
+            _ => return (false, 0),
         }
     }
     pub fn generate_defensive_player_action(&mut self) {
@@ -131,8 +163,5 @@ impl PlayerState {
             self.generate_defensive_player_action();
         }
         self.generate_player_next_area();
-    }
-    pub fn update_has_ball(&mut self, has_ball: bool) {
-        self.has_ball = has_ball;
     }
 }
