@@ -41,6 +41,46 @@ pub enum CourtArea {
     OutOfBounds,
 }
 
+impl CourtArea {
+    pub fn shot_chance(&self) -> f32 {
+        match self {
+            CourtArea::RestrictedAreaLeft
+            | CourtArea::RestrictedAreaRight
+            | CourtArea::RestrictedAreaMiddle => 1.0,
+            CourtArea::LowPostRight | CourtArea::LowPostLeft => 0.9,
+            CourtArea::ShortCornerLeft | CourtArea::ShortCornerRight => 0.85,
+            CourtArea::ElbowLeft | CourtArea::ElbowRight | CourtArea::FreeThrowLine => 0.8,
+            CourtArea::Center => 0.1,
+            CourtArea::ThreePointLineCornerLeft | CourtArea::ThreePointLineCornerRight => 1.0,
+            CourtArea::ThreePointLineWingLeft
+            | CourtArea::ThreePointLineWingRight
+            | CourtArea::ThreePointLineCenter => 1.0,
+            CourtArea::MidrangeCenter
+            | CourtArea::MidrangeWingLeft
+            | CourtArea::MidrangeWingRight => 0.7,
+            CourtArea::MidrangeBaselineLeft | CourtArea::MidrangeBaselineRight => 0.7,
+            CourtArea::Backcourt => 0.0,
+            CourtArea::SidelineLeft
+            | CourtArea::SidelineRight
+            | CourtArea::BaselineLeft
+            | CourtArea::BaselineRight
+            | CourtArea::OutOfBounds => 0.0,
+        }
+    }
+    pub fn is_front_court(&self) -> bool {
+        match self {
+            CourtArea::Center
+            | CourtArea::Backcourt
+            | CourtArea::OutOfBounds
+            | CourtArea::SidelineLeft
+            | CourtArea::SidelineRight
+            | CourtArea::BaselineLeft
+            | CourtArea::BaselineRight => false,
+            _ => true,
+        }
+    }
+}
+
 pub fn can_move_to(current_area: CourtArea) -> HashSet<CourtArea> {
     match current_area {
         CourtArea::RestrictedAreaLeft => [

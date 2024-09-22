@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 
 pub mod court;
 pub mod event;
+use crate::game::court::CourtArea;
 use crate::game::event::game_event;
 use crate::game::event::jump_ball;
 use crate::player::player_state::PlayerState;
@@ -82,6 +83,24 @@ impl Game<'_> {
         Ok(game)
     }
 
+    pub fn change_possession(&mut self, possession: Possession) {
+        self.state
+            .team_state
+            .iter_mut()
+            .enumerate()
+            .for_each(|(_, s)| {
+                s.active_players.iter_mut().enumerate().for_each(|(_, p)| {
+                    if p.1.current_area.is_front_court() {
+                        p.1.current_area = CourtArea::Backcourt;
+                    }
+                    if p.1.current_area == CourtArea::Backcourt {
+                        p.1.current_area = CourtArea::Center;
+                    }
+                })
+            });
+        self.state.possession = possession;
+    }
+
     pub fn generate_next_game_event(&mut self) -> Result<(), String> {
         if self.events.len() == 0 {
             let _ = jump_ball::generate_jump_ball(self);
@@ -91,8 +110,9 @@ impl Game<'_> {
 
         while !game_end {
             //Print score
+            println!("------------------------------------------------------");
+            let _ = game_event::GameEvent::generate_next_game_event(self);
             println!("Possession: {:?}", self.state.possession);
-
             self.state.team_state.iter().enumerate().for_each(|(i, s)| {
                 println!("Team: {}", if i == 0 { "Home" } else { "Away" },);
                 for (_, p) in s.active_players.iter().enumerate() {
@@ -102,7 +122,7 @@ impl Game<'_> {
                     );
                 }
             });
-            let _ = game_event::GameEvent::generate_next_game_event(self);
+
             let total_ms = self.state.time.as_millis();
             let minutes = total_ms / 60000;
             let seconds = (total_ms % 60000) / 1000;

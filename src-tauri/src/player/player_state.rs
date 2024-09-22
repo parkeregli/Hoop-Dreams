@@ -1,4 +1,5 @@
 use crate::game::court::{self, CourtArea};
+use crate::player::player_attributes;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
@@ -66,17 +67,43 @@ impl PlayerState {
             }
         }
     }
-    pub fn generate_offensive_player_action(&mut self) {
+    pub fn generate_offensive_player_action(
+        &mut self,
+        attributes: &player_attributes::PlayerAttributes,
+    ) {
         let actions;
         if self.has_ball {
-            actions = vec![
-                PlayerAction::Pass,
-                PlayerAction::Drive,
-                PlayerAction::Shoot,
-                PlayerAction::ShootOfDribble,
-                PlayerAction::Layup,
-                PlayerAction::Dunk,
-            ];
+            println!(
+                "Shot Chance: {}, Area: {:?}",
+                self.calculate_shot_chance(attributes),
+                self.current_area
+            );
+            if self.calculate_shot_chance(attributes) < 0.4 {
+                actions = vec![PlayerAction::Pass, PlayerAction::Drive]
+            } else {
+                let inside_shot_areas = [
+                    CourtArea::RestrictedAreaLeft,
+                    CourtArea::RestrictedAreaRight,
+                    CourtArea::RestrictedAreaMiddle,
+                    CourtArea::LowPostLeft,
+                    CourtArea::LowPostRight,
+                    CourtArea::ShortCornerLeft,
+                    CourtArea::ShortCornerRight,
+                ];
+                if inside_shot_areas.contains(&self.current_area) {
+                    if self.action == PlayerAction::Drive {
+                        actions = vec![PlayerAction::Layup, PlayerAction::Dunk];
+                    } else {
+                        actions = vec![PlayerAction::Shoot];
+                    }
+                } else {
+                    if self.action == PlayerAction::Drive {
+                        actions = vec![PlayerAction::ShootOfDribble];
+                    } else {
+                        actions = vec![PlayerAction::Shoot, PlayerAction::ShootOfDribble];
+                    }
+                }
+            }
         } else {
             actions = vec![
                 PlayerAction::Rebound,
@@ -87,12 +114,11 @@ impl PlayerState {
             ];
         }
         let index = rand::random::<usize>() % actions.len();
-        self.action = actions[index]
+        self.action = actions[index];
     }
     //Function that returns Some(2, 3) or None
     pub fn is_shot(&self) -> (bool, u8) {
         let shot_actions = [
-            PlayerAction::Drive,
             PlayerAction::Shoot,
             PlayerAction::ShootOfDribble,
             PlayerAction::Layup,
@@ -150,15 +176,31 @@ impl PlayerState {
         self.action = actions[index]
     }
     pub fn generate_player_next_area(&mut self) {
-        let available_areas = court::can_move_to(self.current_area);
-        let index = rand::random::<usize>() % available_areas.len();
-        self.current_area = available_areas.into_iter().nth(index).unwrap()
+        let (is_shot, _) = self.is_shot();
+        if !is_shot {
+            let available_areas = court::can_move_to(self.current_area);
+            let index = rand::random::<usize>() % available_areas.len();
+            self.current_area = available_areas.into_iter().nth(index).unwrap()
+        }
     }
 
-    pub fn generate_next_player_state(&mut self, is_offense: bool, has_ball: bool) {
+    pub fn calculate_shot_chance(&self, attributes: &player_attributes::PlayerAttributes) -> f32 {
+        let area_shot_chance = self.current_area.shot_chance();
+        let attributes_shot_chance = attributes.shot_chance(self.current_area);
+        let shot_chance = (area_shot_chance * attributes_shot_chance) / 100.0;
+        return shot_chance;
+    }
+
+    pub fn generate_next_player_state(
+        &mut self,
+        attributes: &player_attributes::PlayerAttributes,
+        is_offense: bool,
+        has_ball: bool,
+    ) {
         self.has_ball = has_ball;
+
         if is_offense {
-            self.generate_offensive_player_action();
+            self.generate_offensive_player_action(attributes);
         } else {
             self.generate_defensive_player_action();
         }

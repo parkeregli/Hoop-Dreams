@@ -1,3 +1,4 @@
+use crate::game::court::CourtArea;
 use rand::Rng;
 use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
@@ -47,6 +48,47 @@ impl PlayerAttributes {
             strength: 0,
             durability: 0,
             conditioning: 0,
+        }
+    }
+    pub fn shot_chance(&self, area: CourtArea) -> f32 {
+        match area {
+            CourtArea::RestrictedAreaLeft
+            | CourtArea::RestrictedAreaRight
+            | CourtArea::RestrictedAreaMiddle
+            | CourtArea::LowPostLeft
+            | CourtArea::LowPostRight
+            | CourtArea::ShortCornerLeft
+            | CourtArea::ShortCornerRight => {
+                return self.close_shot as f32;
+            }
+            CourtArea::ElbowLeft
+            | CourtArea::ElbowRight
+            | CourtArea::FreeThrowLine
+            | CourtArea::MidrangeCenter
+            | CourtArea::MidrangeWingLeft
+            | CourtArea::MidrangeWingRight
+            | CourtArea::MidrangeBaselineLeft
+            | CourtArea::MidrangeBaselineRight => {
+                return self.mid_shot as f32;
+            }
+            CourtArea::ThreePointLineCornerLeft
+            | CourtArea::ThreePointLineCornerRight
+            | CourtArea::ThreePointLineWingLeft
+            | CourtArea::ThreePointLineWingRight
+            | CourtArea::ThreePointLineCenter => {
+                return self.deep_shot as f32;
+            }
+            CourtArea::Center => {
+                return 0.1;
+            }
+            CourtArea::Backcourt
+            | CourtArea::SidelineLeft
+            | CourtArea::SidelineRight
+            | CourtArea::BaselineLeft
+            | CourtArea::BaselineRight
+            | CourtArea::OutOfBounds => {
+                return 0.0;
+            }
         }
     }
 

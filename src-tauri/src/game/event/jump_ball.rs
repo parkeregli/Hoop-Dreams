@@ -76,7 +76,7 @@ pub fn generate_jump_ball(game: &mut Game) -> Result<(), String> {
                 } else {
                     is_offense = i == 1;
                 }
-                p.1.generate_next_player_state(is_offense, p.1.has_ball)
+                p.1.generate_next_player_state(p.0.attributes(), is_offense, p.1.has_ball)
             }
         });
     game.events.push(event);
