@@ -44,22 +44,6 @@ In the Indie Basketball Manager Sim, you'll have the opportunity to:
 - Track your team's performance, statistics, and rankings.
 - Make crucial decisions that impact your team's success on and off the court.
 
-## 🤝 Contributing
-
-We welcome contributions from the community to make the Indie Basketball Manager Sim even better! If you'd like to contribute, please follow these steps:
-
-1. Fork the repository.
-2. Create a new branch for your feature or bug fix.
-3. Make your changes and commit them with descriptive commit messages.
-4. Push your changes to your forked repository.
-5. Submit a pull request to the main repository, explaining your changes in detail.
-
-Please ensure that your contributions adhere to the project's coding standards and guidelines.
-
-## 📄 License
-
-The Indie Basketball Manager Sim is released under the [MIT License](LICENSE). Feel free to modify and distribute the game in accordance with the terms of the license.
-
 ## 📧 Contact
 
 If you have any questions, suggestions, or feedback, please don't hesitate to reach out to us. You can contact the development team at [parker.egli22@gmail.com](mailto:parker.egli22@gmail.com).
