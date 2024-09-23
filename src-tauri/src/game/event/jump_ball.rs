@@ -37,49 +37,37 @@ pub fn generate_jump_ball(game: &mut Game) -> Result<(), String> {
 
     let mut rng = thread_rng();
 
-    let (possession, team_state, best_jumper) = if winner == 0 {
+    let (possession, winning_team_state, best_jumper) = if winner == 0 {
         (Possession::Home, &mut game.state.team_state[0], home_best)
     } else {
         (Possession::Away, &mut game.state.team_state[1], away_best)
     };
 
-    game.state.possession = possession;
-    let player_index = rng.gen_range(0..team_state.active_players.len());
-    team_state.active_players[player_index].1.has_ball = true;
+    let player_index = rng.gen_range(0..winning_team_state.active_players.len());
+    game.change_possession(Some((possession, player_index)));
 
-    let has_ball = &team_state.active_players[player_index].0;
-
-    let event = GameEvent::new(
-        format!(
-            "Jump Ball won for {} by {} {}. {} {} has the ball.",
-            if winner == 0 { "Home" } else { "Away" },
-            best_jumper.1,
-            best_jumper.2,
-            &has_ball.first_name,
-            &has_ball.last_name
-        ),
-        game.state.time - Duration::from_secs(1),
-        1,
-        possession,
-    );
-
-    println!("Event: {:?}", event.action);
-    game.state
-        .team_state
-        .iter_mut()
-        .enumerate()
-        .for_each(|(i, s)| {
-            for (_, p) in s.active_players.iter_mut().enumerate() {
-                let is_offense: bool;
-                if game.state.possession == Possession::Home {
-                    is_offense = i == 0;
-                } else {
-                    is_offense = i == 1;
-                }
-                p.1.generate_next_player_state(p.0.attributes(), is_offense, p.1.has_ball)
-            }
-        });
-    game.events.push(event);
-
+    let has_ball = game.player_has_ball();
+    match has_ball {
+        Some((player, _)) => {
+            let event = GameEvent::new(
+                format!(
+                    "Jump Ball won for {} by {} {}. {} {} has the ball.",
+                    if winner == 0 { "Home" } else { "Away" },
+                    best_jumper.1,
+                    best_jumper.2,
+                    player.first_name,
+                    player.last_name
+                ),
+                game.state.time - Duration::from_secs(1),
+                1,
+                possession,
+            );
+            game.events.push(event);
+        }
+        None => {
+            return Ok(());
+        }
+    }
+    game.update_player_states();
     Ok(())
 }

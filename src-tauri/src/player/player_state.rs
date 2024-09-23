@@ -28,24 +28,21 @@ pub enum PlayerAction {
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct PlayerState {
     pub action: PlayerAction,
-    pub has_ball: bool,
     pub current_area: court::CourtArea,
 }
 
 impl PlayerState {
-    pub fn new(is_offense: bool, has_ball: bool, area: Option<court::CourtArea>) -> PlayerState {
+    pub fn new(is_offense: bool, area: Option<court::CourtArea>) -> PlayerState {
         match area {
             Some(value) => {
                 if is_offense {
                     PlayerState {
                         action: PlayerAction::Idle,
-                        has_ball,
                         current_area: value,
                     }
                 } else {
                     PlayerState {
                         action: PlayerAction::Idle,
-                        has_ball,
                         current_area: value,
                     }
                 }
@@ -54,13 +51,11 @@ impl PlayerState {
                 if is_offense {
                     PlayerState {
                         action: PlayerAction::Idle,
-                        has_ball,
                         current_area: court::CourtArea::Center,
                     }
                 } else {
                     PlayerState {
                         action: PlayerAction::Idle,
-                        has_ball,
                         current_area: court::CourtArea::Center,
                     }
                 }
@@ -70,15 +65,16 @@ impl PlayerState {
     pub fn generate_offensive_player_action(
         &mut self,
         attributes: &player_attributes::PlayerAttributes,
+        has_ball: bool,
     ) {
         let actions;
-        if self.has_ball {
+        if has_ball {
+            let shot_chance = self.calculate_shot_chance(attributes);
             println!(
                 "Shot Chance: {}, Area: {:?}",
-                self.calculate_shot_chance(attributes),
-                self.current_area
+                shot_chance, self.current_area
             );
-            if self.calculate_shot_chance(attributes) < 0.4 {
+            if shot_chance < 0.4 {
                 actions = vec![PlayerAction::Pass, PlayerAction::Drive]
             } else {
                 let inside_shot_areas = [
@@ -117,7 +113,7 @@ impl PlayerState {
         self.action = actions[index];
     }
     //Function that returns Some(2, 3) or None
-    pub fn is_shot(&self) -> (bool, u8) {
+    pub fn is_shot(&self) -> Option<u8> {
         let shot_actions = [
             PlayerAction::Shoot,
             PlayerAction::ShootOfDribble,
@@ -153,14 +149,14 @@ impl PlayerState {
         match self.action {
             action if shot_actions.contains(&action) => {
                 if two_points.contains(&self.current_area) {
-                    return (true, 2);
+                    return Some(2);
                 } else if three_points.contains(&self.current_area) {
-                    return (true, 3);
+                    return Some(3);
                 } else {
-                    return (false, 0);
+                    return None;
                 }
             }
-            _ => return (false, 0),
+            _ => return None,
         }
     }
     pub fn generate_defensive_player_action(&mut self) {
@@ -176,12 +172,9 @@ impl PlayerState {
         self.action = actions[index]
     }
     pub fn generate_player_next_area(&mut self) {
-        let (is_shot, _) = self.is_shot();
-        if !is_shot {
-            let available_areas = court::can_move_to(self.current_area);
-            let index = rand::random::<usize>() % available_areas.len();
-            self.current_area = available_areas.into_iter().nth(index).unwrap()
-        }
+        let available_areas = court::can_move_to(self.current_area);
+        let index = rand::random::<usize>() % available_areas.len();
+        self.current_area = available_areas.into_iter().nth(index).unwrap()
     }
 
     pub fn calculate_shot_chance(&self, attributes: &player_attributes::PlayerAttributes) -> f32 {
@@ -197,10 +190,8 @@ impl PlayerState {
         is_offense: bool,
         has_ball: bool,
     ) {
-        self.has_ball = has_ball;
-
         if is_offense {
-            self.generate_offensive_player_action(attributes);
+            self.generate_offensive_player_action(attributes, has_ball);
         } else {
             self.generate_defensive_player_action();
         }

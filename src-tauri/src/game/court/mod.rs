@@ -69,8 +69,7 @@ impl CourtArea {
     }
     pub fn is_front_court(&self) -> bool {
         match self {
-            CourtArea::Center
-            | CourtArea::Backcourt
+            CourtArea::Backcourt
             | CourtArea::OutOfBounds
             | CourtArea::SidelineLeft
             | CourtArea::SidelineRight
