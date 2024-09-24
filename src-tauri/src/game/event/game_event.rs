@@ -40,27 +40,26 @@ impl GameEvent {
                 game.handle_player_actions();
                 //Generate random number between 1 and 24 float
                 let mut rng = rand::thread_rng();
-                let random = rng.gen_range(1.0..7.0);
-                if random > game.state.time.as_secs_f32() {
-                    game.state.time = Duration::from_secs(0);
-                } else {
-                    if random > game.state.shot_clock.as_secs_f32() {
-                        match game.state.possession {
-                            Some((Possession::Home, _)) => {
-                                game.change_possession(Some((Possession::Away, 3)));
-                            }
-                            Some((Possession::Away, _)) => {
-                                game.change_possession(Some((Possession::Home, 3)));
-                            }
-                            None => {
-                                //Jump ball
-                            }
+                let max = f32::min(7.0, game.state.time.as_secs_f32());
+                let min = f32::min(1.0, game.state.time.as_secs_f32());
+                let random = rng.gen_range(min..max);
+                if random > game.state.shot_clock.as_secs_f32() {
+                    println!("Shot clock ran out. Turnover!");
+                    match game.state.possession {
+                        Some((Possession::Home, _)) => {
+                            game.change_possession(Some((Possession::Away, 3)));
                         }
-                    } else {
-                        game.state.shot_clock -= Duration::from_secs_f32(random)
+                        Some((Possession::Away, _)) => {
+                            game.change_possession(Some((Possession::Home, 3)));
+                        }
+                        None => {
+                            //Jump ball
+                        }
                     }
-                    game.state.time -= Duration::from_secs_f32(random);
+                } else {
+                    game.state.shot_clock -= Duration::from_secs_f32(random)
                 }
+                game.state.time -= Duration::from_secs_f32(random);
 
                 return Ok(());
             }
@@ -72,6 +71,7 @@ impl GameEvent {
                 return Ok(());
             }
             // Game is over
+            game.state.time = Duration::from_secs(0);
             return Ok(());
         } else {
             // End of qtr

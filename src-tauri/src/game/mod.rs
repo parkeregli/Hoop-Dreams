@@ -130,8 +130,8 @@ impl Game<'_> {
         let mut new_possession: Option<(Possession, usize)> = self.state.possession;
         let mut points_added: u8 = 0;
         if let Some((player, player_state)) = self.player_has_ball() {
-            let buzzer_beater = self.state.shot_clock < Duration::from_millis(500)
-                || self.state.time < Duration::from_millis(500);
+            let buzzer_beater = self.state.shot_clock < Duration::from_secs(1)
+                || self.state.time < Duration::from_secs(1);
             if buzzer_beater || player_state.is_shot().is_some() {
                 let points: u8 = if buzzer_beater {
                     player_state.current_area.points()
