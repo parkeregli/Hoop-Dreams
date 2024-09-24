@@ -144,15 +144,21 @@ impl Game<'_> {
                 if shot_chance > random {
                     //Shot made
                     println!(
-                        "{} shoots from {:?} and makes it!",
-                        player.first_name, player_state.current_area
+                        "{} {} {:?} from {:?} and makes it!",
+                        player.first_name,
+                        player.last_name,
+                        player_state.action,
+                        player_state.current_area
                     );
 
                     points_added = points;
                 } else {
                     println!(
-                        "{} shoots from {:?} and misses it!",
-                        player.first_name, player_state.current_area
+                        "{} {} {:?} from {:?} and misses it!",
+                        player.first_name,
+                        player.last_name,
+                        player_state.action,
+                        player_state.current_area
                     );
                 }
                 let mut rng = thread_rng();
