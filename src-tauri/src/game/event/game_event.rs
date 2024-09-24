@@ -26,12 +26,12 @@ impl GameEvent {
         // Generate next event
         if game.state.time.as_secs() > 0 {
             // Check if time is less than 0.3 seconds
-            if game.state.time.as_secs() < Duration::from_millis(300).as_secs() {
+            if game.state.time < Duration::from_millis(300) {
                 //Tip in event
                 println!("Tip in");
                 game.state.time = Duration::from_secs(0);
                 return Ok(());
-            } else if game.state.time.as_secs() < Duration::from_millis(500).as_secs() {
+            } else if game.state.time < Duration::from_millis(500) {
                 //Enough time for a shot no dribble
                 game.state.time = Duration::from_secs(0);
                 return Ok(());
@@ -40,11 +40,26 @@ impl GameEvent {
                 game.handle_player_actions();
                 //Generate random number between 1 and 24 float
                 let mut rng = rand::thread_rng();
-                let random = rng.gen_range(0.0..12.0);
+                let random = rng.gen_range(1.0..7.0);
                 if random > game.state.time.as_secs_f32() {
                     game.state.time = Duration::from_secs(0);
                 } else {
-                    game.state.time = game.state.time - Duration::from_secs_f32(random);
+                    if random > game.state.shot_clock.as_secs_f32() {
+                        match game.state.possession {
+                            Some((Possession::Home, _)) => {
+                                game.change_possession(Some((Possession::Away, 3)));
+                            }
+                            Some((Possession::Away, _)) => {
+                                game.change_possession(Some((Possession::Home, 3)));
+                            }
+                            None => {
+                                //Jump ball
+                            }
+                        }
+                    } else {
+                        game.state.shot_clock -= Duration::from_secs_f32(random)
+                    }
+                    game.state.time -= Duration::from_secs_f32(random);
                 }
 
                 return Ok(());

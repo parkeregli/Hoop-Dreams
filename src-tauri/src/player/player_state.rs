@@ -70,11 +70,7 @@ impl PlayerState {
         let actions;
         if has_ball {
             let shot_chance = self.calculate_shot_chance(attributes);
-            println!(
-                "Shot Chance: {}, Area: {:?}",
-                shot_chance, self.current_area
-            );
-            if shot_chance < 0.4 {
+            if shot_chance < 0.3 {
                 actions = vec![PlayerAction::Pass, PlayerAction::Drive]
             } else {
                 let inside_shot_areas = [
@@ -120,42 +116,9 @@ impl PlayerState {
             PlayerAction::Layup,
             PlayerAction::Dunk,
         ];
-        let two_points = [
-            CourtArea::ElbowLeft,
-            CourtArea::ElbowRight,
-            CourtArea::LowPostLeft,
-            CourtArea::LowPostRight,
-            CourtArea::FreeThrowLine,
-            CourtArea::MidrangeBaselineRight,
-            CourtArea::MidrangeBaselineLeft,
-            CourtArea::RestrictedAreaMiddle,
-            CourtArea::RestrictedAreaRight,
-            CourtArea::RestrictedAreaLeft,
-            CourtArea::MidrangeWingRight,
-            CourtArea::MidrangeWingLeft,
-            CourtArea::ShortCornerRight,
-            CourtArea::ShortCornerLeft,
-            CourtArea::MidrangeCenter,
-        ];
-        let three_points = [
-            CourtArea::ThreePointLineCornerRight,
-            CourtArea::ThreePointLineCornerLeft,
-            CourtArea::ThreePointLineWingRight,
-            CourtArea::ThreePointLineWingLeft,
-            CourtArea::ThreePointLineCenter,
-            CourtArea::Backcourt,
-            CourtArea::Center,
-        ];
+        let points = self.current_area.points();
         match self.action {
-            action if shot_actions.contains(&action) => {
-                if two_points.contains(&self.current_area) {
-                    return Some(2);
-                } else if three_points.contains(&self.current_area) {
-                    return Some(3);
-                } else {
-                    return None;
-                }
-            }
+            action if shot_actions.contains(&action) => Some(points),
             _ => return None,
         }
     }

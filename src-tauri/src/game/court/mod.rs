@@ -67,6 +67,41 @@ impl CourtArea {
             | CourtArea::OutOfBounds => 0.0,
         }
     }
+    pub fn points(&self) -> u8 {
+        let two_points = [
+            CourtArea::ElbowLeft,
+            CourtArea::ElbowRight,
+            CourtArea::LowPostLeft,
+            CourtArea::LowPostRight,
+            CourtArea::FreeThrowLine,
+            CourtArea::MidrangeBaselineRight,
+            CourtArea::MidrangeBaselineLeft,
+            CourtArea::RestrictedAreaMiddle,
+            CourtArea::RestrictedAreaRight,
+            CourtArea::RestrictedAreaLeft,
+            CourtArea::MidrangeWingRight,
+            CourtArea::MidrangeWingLeft,
+            CourtArea::ShortCornerRight,
+            CourtArea::ShortCornerLeft,
+            CourtArea::MidrangeCenter,
+        ];
+        let three_points = [
+            CourtArea::ThreePointLineCornerRight,
+            CourtArea::ThreePointLineCornerLeft,
+            CourtArea::ThreePointLineWingRight,
+            CourtArea::ThreePointLineWingLeft,
+            CourtArea::ThreePointLineCenter,
+            CourtArea::Backcourt,
+            CourtArea::Center,
+        ];
+        if two_points.contains(self) {
+            return 2;
+        } else if three_points.contains(self) {
+            return 3;
+        } else {
+            return 0;
+        }
+    }
     pub fn is_front_court(&self) -> bool {
         match self {
             CourtArea::Backcourt

@@ -107,6 +107,7 @@ impl Game<'_> {
                         }
                     })
                 });
+            self.state.shot_clock = Duration::from_secs(24);
         }
         self.state.possession = new_possession;
     }
@@ -129,7 +130,14 @@ impl Game<'_> {
         let mut new_possession: Option<(Possession, usize)> = self.state.possession;
         let mut points_added: u8 = 0;
         if let Some((player, player_state)) = self.player_has_ball() {
-            if let Some(points) = player_state.is_shot() {
+            let buzzer_beater = self.state.shot_clock < Duration::from_millis(500)
+                || self.state.time < Duration::from_millis(500);
+            if buzzer_beater || player_state.is_shot().is_some() {
+                let points: u8 = if buzzer_beater {
+                    player_state.current_area.points()
+                } else {
+                    player_state.is_shot().expect("No points generated")
+                };
                 let random = thread_rng().gen_range(0.0..1.0);
                 let shot_chance = player_state.calculate_shot_chance(player.attributes());
                 println!("RNG: {}, Shot Chance: {}", random, shot_chance);
@@ -193,10 +201,6 @@ impl Game<'_> {
         self.update_player_states();
     }
     pub fn update_player_states(&mut self) {
-        println!(
-            "update_player_states: Possession {:?}",
-            self.state.possession
-        );
         self.state
             .team_state
             .iter_mut()
@@ -207,7 +211,6 @@ impl Game<'_> {
                         Some((Possession::Home, index)) => {
                             if i == 0 {
                                 if j == index {
-                                    println!("Home possession: {}", index);
                                     p.1.generate_next_player_state(p.0.attributes(), true, true);
                                 } else {
                                     p.1.generate_next_player_state(p.0.attributes(), true, false)
@@ -219,7 +222,6 @@ impl Game<'_> {
                         Some((Possession::Away, index)) => {
                             if i == 1 {
                                 if j == index {
-                                    println!("Away possession: {}", index);
                                     p.1.generate_next_player_state(p.0.attributes(), true, true);
                                 } else {
                                     p.1.generate_next_player_state(p.0.attributes(), true, false)
@@ -246,7 +248,17 @@ impl Game<'_> {
         while !game_end {
             //Print score
             println!("------------------------------------------------------");
-            let _ = game_event::GameEvent::generate_next_game_event(self);
+            println!("Home: {}, Away: {}", self.state.score.0, self.state.score.1);
+            let total_ms = self.state.time.as_millis();
+            let minutes = total_ms / 60000;
+            let seconds = (total_ms % 60000) / 1000;
+            let milliseconds = (total_ms % 1000) / 10;
+            let sc_seconds = self.state.shot_clock.as_secs();
+            let sc_milliseconds = self.state.shot_clock.as_millis() % 1000;
+            println!(
+                "Period: {} | Time: {:02}:{:02}:{:03} | Shotclock: {:02}:{:03}",
+                self.state.period, minutes, seconds, milliseconds, sc_seconds, sc_milliseconds
+            );
             println!("Possession: {:?}", self.state.possession);
             self.state.team_state.iter().enumerate().for_each(|(i, s)| {
                 println!("Team: {}", if i == 0 { "Home" } else { "Away" },);
@@ -257,16 +269,7 @@ impl Game<'_> {
                     );
                 }
             });
-
-            let total_ms = self.state.time.as_millis();
-            let minutes = total_ms / 60000;
-            let seconds = (total_ms % 60000) / 1000;
-            let milliseconds = (total_ms % 1000) / 10;
-            println!(
-                "Period: {}, Time: {:02}:{:02}:{:03}",
-                self.state.period, minutes, seconds, milliseconds
-            );
-            println!("Home: {}, Away: {}", self.state.score.0, self.state.score.1);
+            let _ = game_event::GameEvent::generate_next_game_event(self);
             println!("------------------------------------------------------");
             game_end = self.state.time == Duration::from_secs(0)
                 && self.state.period >= 4
