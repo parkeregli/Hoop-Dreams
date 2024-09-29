@@ -18,6 +18,7 @@ pub enum Possession {
     Home,
     Away,
 }
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct TeamState {
     active_players: [(Player, PlayerState); 5],
     bench: (Vec<Player>, Vec<Player>),
@@ -30,6 +31,8 @@ impl TeamState {
         }
     }
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct GameState {
     time: Duration,
     shot_clock: Duration,
@@ -40,48 +43,52 @@ struct GameState {
     timeouts: (u8, u8),
     score: (u8, u8),
 }
-pub struct Game<'a> {
-    teams: (&'a Team, &'a Team),
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Game {
+    teams: (Team, Team),
     events: Vec<game_event::GameEvent>,
     state: GameState,
 }
 
-impl Game<'_> {
-    pub fn new<'a>(
-        db: &Connection,
-        home_team: &'a Team,
-        away_team: &'a Team,
-    ) -> Result<Game<'a>, rusqlite::Error> {
-        let home_players = (
-            home_team
-                .get_starting_lineup(db)
-                .expect("Error getting starting lineups"),
-            home_team.get_bench(db).expect("Error getting bench."),
-        );
-        let away_players = (
-            away_team
-                .get_starting_lineup(db)
-                .expect("Error getting starting lineups"),
-            away_team.get_bench(db).expect("Error getting bench."),
-        );
-        let home_state = TeamState::new(home_players.0, home_players.1);
-        let away_state = TeamState::new(away_players.0, away_players.1);
-        let game = Game {
-            teams: (home_team, away_team),
-            state: GameState {
-                period: 1,
-                shot_clock: Duration::from_secs(24),
-                possession: None,
-                score: (0, 0),
-                fouls: (0, 0),
-                timeouts: (0, 0),
-                team_state: [home_state, away_state],
-                //720 = 12 minutes
-                time: Duration::from_secs(720),
-            },
-            events: Vec::new(),
-        };
-        Ok(game)
+impl Game {
+    pub fn new(db: &Connection) -> Result<Game, rusqlite::Error> {
+        let teams = Team::get_teams_from_db(db);
+        match teams {
+            Ok(teams) => {
+                let home_players = (
+                    teams[0]
+                        .get_starting_lineup(db)
+                        .expect("Error getting starting lineups"),
+                    teams[0].get_bench(db).expect("Error getting bench."),
+                );
+                let away_players = (
+                    teams[1]
+                        .get_starting_lineup(db)
+                        .expect("Error getting starting lineups"),
+                    teams[1].get_bench(db).expect("Error getting bench."),
+                );
+                let home_state = TeamState::new(home_players.0, home_players.1);
+                let away_state = TeamState::new(away_players.0, away_players.1);
+                let game = Game {
+                    teams: (teams[0].clone(), teams[1].clone()),
+                    state: GameState {
+                        period: 1,
+                        shot_clock: Duration::from_secs(24),
+                        possession: None,
+                        score: (0, 0),
+                        fouls: (0, 0),
+                        timeouts: (0, 0),
+                        team_state: [home_state, away_state],
+                        //720 = 12 minutes
+                        time: Duration::from_secs(720),
+                    },
+                    events: Vec::new(),
+                };
+                Ok(game)
+            }
+            Err(e) => Err(e),
+        }
     }
 
     pub fn change_possession(&mut self, new_possession: Option<(Possession, usize)>) {
@@ -130,8 +137,8 @@ impl Game<'_> {
         let mut new_possession: Option<(Possession, usize)> = self.state.possession;
         let mut points_added: u8 = 0;
         if let Some((player, player_state)) = self.player_has_ball() {
-            let buzzer_beater = self.state.shot_clock < Duration::from_secs(1)
-                || self.state.time < Duration::from_secs(1);
+            let buzzer_beater = self.state.shot_clock < Duration::from_millis(500)
+                || self.state.time < Duration::from_millis(500);
             if buzzer_beater || player_state.is_shot().is_some() {
                 let points: u8 = if buzzer_beater {
                     player_state.current_area.points()

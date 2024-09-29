@@ -4,13 +4,13 @@
       <Toolbar></Toolbar>
       <div v-if="teams.length > 0" class="row align-items-stretch justify-content-between h-22rem">
         <div class="w-full h-full">
-          <TeamDisplay class="h-full" :teamId="teams[0].id" />
+          <TeamDisplay class="h-full" :team_name="teams[0].name" :players="game.state.team_state[0].active_players" />
         </div>
         <div v-if="false" class="w-full h-full">
           <TeamStats class="h-full" :teamStats="teamStats" />
         </div>
         <div class="w-full h-full">
-          <TeamDisplay class="h-full" :teamId="teams[1].id" />
+          <TeamDisplay class="h-full" :team_name="teams[1].name" :players="game.state.team_state[1].active_players" />
         </div>
       </div>
     </div>
@@ -21,7 +21,7 @@
 </template>
 
 <script setup lang="ts">
-import { invoke } from "@tauri-apps/api/tauri";
+import { invoke } from "@tauri-apps/api/core";
 import { ref, onMounted } from "vue";
 import GameCast from "@/components/GameCast.vue";
 import TeamDisplay from "@/components/TeamDisplay.vue";
@@ -32,6 +32,7 @@ import Toolbar from "@/components/Toolbar.vue";
 const router = useRouter();
 
 const teams = ref([]);
+const game = ref({});
 const loading = ref(false);
 
 const teamStats = [
@@ -45,14 +46,16 @@ const teamStats = [
   { stat: "REB", home: "Home", away: "Away" },
   { stat: "TO", home: "Home", away: "Away" },
 ];
-const getTeams = async () => {
+const loadGame = async () => {
   try {
     loading.value = true;
-    const teamRes = await invoke("get_teams");
-    if (teamRes === null) {
-      throw new Error("No teams found");
+    const gameRes = await invoke("load_game");
+    if (gameRes === null) {
+      throw new Error("Failed to load game");
     }
-    teams.value = teamRes;
+    console.log(gameRes);
+    game.value = gameRes;
+    teams.value = gameRes.teams;
   } catch (error) {
     console.error(error);
   }
@@ -60,7 +63,7 @@ const getTeams = async () => {
 
 onMounted(async () => {
   try {
-    await getTeams();
+    await loadGame();
   } catch (err) {
     console.error(err);
   }

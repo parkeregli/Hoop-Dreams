@@ -9,15 +9,19 @@ default-run = "app"
 edition = "2021"
 rust-version = "1.60"
 
+[lib]
+name = "app_lib"
+crate-type = ["cdylib", "rlib"]
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [build-dependencies]
-tauri-build = { version = "1.5.1", features = [] }
+tauri-build = { version = "2.0.0-rc", features = [] }
 
 [dependencies]
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
-tauri = { version = "1.6.0", features = [ "window-unminimize", "window-unmaximize", "window-close", "window-start-dragging", "window-minimize", "window-maximize", "window-hide", "window-show"] }
+tauri = { version = "2.0.0-rc", features = [] }
 rusqlite = "0.31.0"
 rand = "0.8.5"
 

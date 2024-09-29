@@ -26,13 +26,16 @@ impl GameEvent {
         // Generate next event
         if game.state.time.as_secs() > 0 {
             // Check if time is less than 0.3 seconds
-            if game.state.time < Duration::from_millis(300) {
+            if game.state.time <= Duration::from_millis(300) {
                 //Tip in event
                 println!("Tip in");
+                game.handle_player_actions();
                 game.state.time = Duration::from_secs(0);
                 return Ok(());
-            } else if game.state.time < Duration::from_millis(500) {
+            } else if game.state.time <= Duration::from_millis(500) {
                 //Enough time for a shot no dribble
+                println!("Shot no dribble");
+                game.handle_player_actions();
                 game.state.time = Duration::from_secs(0);
                 return Ok(());
             } else {
@@ -40,9 +43,8 @@ impl GameEvent {
                 game.handle_player_actions();
                 //Generate random number between 1 and 24 float
                 let mut rng = rand::thread_rng();
-                let max = f32::min(7.0, game.state.time.as_secs_f32());
-                let min = f32::min(1.0, game.state.time.as_secs_f32());
-                let random = rng.gen_range(min..max);
+                let max = f32::min(6.0, game.state.time.as_secs_f32());
+                let random = rng.gen_range(1.0..max);
                 if random > game.state.shot_clock.as_secs_f32() {
                     println!("Shot clock ran out. Turnover!");
                     match game.state.possession {

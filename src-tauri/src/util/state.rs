@@ -1,8 +1,11 @@
 use rusqlite::Connection;
 use tauri::{AppHandle, Manager, State};
 
+use crate::game::Game;
+
 pub struct AppState {
     pub db: std::sync::Mutex<Option<Connection>>,
+    pub game: std::sync::Mutex<Option<Game>>,
 }
 
 pub trait ServiceAccess {
@@ -13,6 +16,12 @@ pub trait ServiceAccess {
     fn db_mut<F, TResult>(&self, operation: F) -> TResult
     where
         F: FnOnce(&mut Connection) -> TResult;
+    fn game<F, TResult>(&self, operation: F) -> TResult
+    where
+        F: FnOnce(&Game) -> TResult;
+    fn game_mut<F, TResult>(&self, operation: F) -> TResult
+    where
+        F: FnOnce(&mut Game) -> TResult;
 }
 
 impl ServiceAccess for AppHandle {
@@ -36,5 +45,25 @@ impl ServiceAccess for AppHandle {
         let db = db_connection_guard.as_mut().unwrap();
 
         operation(db)
+    }
+
+    fn game<F, TResult>(&self, operation: F) -> TResult
+    where
+        F: FnOnce(&Game) -> TResult,
+    {
+        let app_state: State<AppState> = self.state();
+        let game_guard = app_state.game.lock().unwrap();
+        let game = game_guard.as_ref().unwrap();
+        operation(game)
+    }
+
+    fn game_mut<F, TResult>(&self, operation: F) -> TResult
+    where
+        F: FnOnce(&mut Game) -> TResult,
+    {
+        let app_state: State<AppState> = self.state();
+        let mut game_guard = app_state.game.lock().unwrap();
+        let game = game_guard.as_mut().unwrap();
+        operation(game)
     }
 }

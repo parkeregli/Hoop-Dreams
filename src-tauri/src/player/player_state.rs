@@ -92,7 +92,7 @@ impl PlayerState {
                     if self.action == PlayerAction::Drive {
                         actions = vec![PlayerAction::ShootOfDribble];
                     } else {
-                        actions = vec![PlayerAction::Shoot, PlayerAction::ShootOfDribble];
+                        actions = vec![PlayerAction::Shoot];
                     }
                 }
             }

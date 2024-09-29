@@ -3,12 +3,7 @@
     <template #title>
       <div class="flex flex-wrap gap-3">
         <div class="flex justify-content-center text-white">
-          <ToggleButton
-            v-model="checked"
-            class="w-6rem"
-            onLabel="Pause"
-            offLabel="Play"
-          />
+          <ToggleButton @click="nextEvent()" v-model="checked" class="w-6rem" onLabel="Pause" offLabel="Play" />
         </div>
       </div>
 
@@ -30,13 +25,17 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from "vue";
+import { invoke } from '@tauri-apps/api/core';
 const items = [
   { timestamp: "1:00", name: "Item 1" },
   { timestamp: "2:00", name: "Item 2" },
   { timestamp: "3:00", name: "Item 3" },
 ];
 
-import { ref } from "vue";
+const nextEvent = () => {
+  invoke('next_play');
+}
 
 const checked = ref(false);
 </script>
@@ -46,9 +45,11 @@ const checked = ref(false);
   border: 2px solid rgba(255, 230, 0, 0.767);
   padding: 2px 5px;
 }
+
 .title {
   text-align: center;
 }
+
 .card {
   width: 100%;
   height: 200px;

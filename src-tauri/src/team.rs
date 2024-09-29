@@ -2,7 +2,7 @@ use crate::player::{self, player_attributes::gen_rand_attrs};
 use rusqlite::Connection;
 use std::fmt;
 
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
 pub struct Team {
     id: Option<i64>,
     name: String,

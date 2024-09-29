@@ -2,17 +2,12 @@ use crate::player;
 use crate::player::player_attributes::gen_rand_attrs;
 use crate::team;
 use rusqlite::{Connection, Result};
-use std::fs;
-use tauri::AppHandle;
+use std::{fs, path::PathBuf};
 
 //Singleton implementation for db
-pub fn init(app_handle: &AppHandle) -> Result<Connection, rusqlite::Error> {
-    let app_dir = app_handle
-        .path_resolver()
-        .app_data_dir()
-        .expect("The app data directory should exist.");
-    fs::create_dir_all(&app_dir).expect("The app data directory should be created.");
-    let sqlite_path = app_dir.join("HoopDreams.sqlite");
+pub fn init(db_path: &PathBuf) -> Result<Connection, rusqlite::Error> {
+    fs::create_dir_all(db_path).expect("The app data directory should be created.");
+    let sqlite_path = db_path.join("HoopDreams.sqlite");
     let conn = Connection::open(sqlite_path)?;
 
     conn.execute(
