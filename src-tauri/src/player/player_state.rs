@@ -1,6 +1,7 @@
 use crate::game::court::{self, CourtArea};
 use crate::player::player_attributes;
 use serde::{Deserialize, Serialize};
+use std::fmt;
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
 pub enum PlayerAction {
@@ -23,6 +24,11 @@ pub enum PlayerAction {
     Steal,
     Foul,
     Idle,
+}
+impl fmt::Display for PlayerAction {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]

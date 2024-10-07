@@ -27,14 +27,17 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { invoke } from '@tauri-apps/api/core';
+import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 const items = [
   { timestamp: "1:00", name: "Item 1" },
   { timestamp: "2:00", name: "Item 2" },
   { timestamp: "3:00", name: "Item 3" },
 ];
 
+const appWebview = getCurrentWebviewWindow();
+
 const nextEvent = () => {
-  invoke('next_play');
+  invoke("start_sim");
 }
 
 const checked = ref(false);

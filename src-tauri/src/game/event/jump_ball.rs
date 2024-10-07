@@ -60,7 +60,7 @@ pub fn generate_jump_ball(game: &mut Game) -> Result<(), String> {
                 ),
                 game.state.time - Duration::from_secs(1),
                 1,
-                possession,
+                Some(possession),
             );
             game.events.push(event);
         }

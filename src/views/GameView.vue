@@ -53,7 +53,6 @@ const loadGame = async () => {
     if (gameRes === null) {
       throw new Error("Failed to load game");
     }
-    console.log(gameRes);
     game.value = gameRes;
     teams.value = gameRes.teams;
   } catch (error) {

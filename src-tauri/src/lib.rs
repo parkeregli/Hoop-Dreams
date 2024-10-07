@@ -7,7 +7,7 @@ mod util;
 
 use crate::util::state::{AppState, ServiceAccess};
 
-use tauri::{AppHandle, Manager, State};
+use tauri::{AppHandle, Emitter, Listener, Manager, State};
 use util::db;
 
 #[tauri::command]
@@ -42,11 +42,27 @@ fn load_game(app_handle: AppHandle, state: tauri::State<AppState>) -> game::Game
     return new_game;
 }
 
-#[tauri::command]
-fn next_play(app_handle: AppHandle) {
+fn simulate_game(app_handle: AppHandle) -> Result<(), Box<dyn std::error::Error>> {
+    app_handle.emit("main", "simulation_started")?;
     app_handle.game_mut(|game| {
-        let _ = game.generate_next_game_event();
+        let mut game_end = false;
+        while !game_end {
+            let event = game.generate_next_game_event().unwrap();
+            println!("{:?}", event);
+            let _ = app_handle.emit_to("main", "game_event", event.clone());
+            game_end = event.is_game_end();
+        }
     });
+    app_handle.emit("main", "simulation_ended")?;
+    Ok(())
+}
+
+#[tauri::command]
+fn start_sim(app_handle: AppHandle) -> Result<(), String> {
+    std::thread::spawn(move || {
+        let _ = simulate_game(app_handle);
+    });
+    Ok(())
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -61,19 +77,26 @@ pub fn run() {
             get_team_starting_lineup,
             get_team,
             load_game,
-            next_play
+            start_sim,
         ])
         .setup(|app| {
-            let handle = app.handle();
-            let app_state: State<AppState> = handle.state();
+            let webview = app.get_webview_window("main").unwrap();
             let path = app
                 .path()
                 .resolve("db", tauri::path::BaseDirectory::Config)
                 .expect("db path should be resolved");
             let db = db::init(&path).expect("Database initialize should succeed");
 
+            let handle = app.handle().clone();
+            let app_state: State<AppState> = handle.state();
             *app_state.db.lock().unwrap() = Some(db);
 
+            let handle = app.handle().clone();
+            webview.listen("start_sim", move |_| {
+                let state = handle.state::<AppState>();
+                let mut game = state.game.lock().unwrap();
+                let _ = game.as_mut().unwrap().generate_next_game_event();
+            });
             Ok(())
         })
         .run(tauri::generate_context!())

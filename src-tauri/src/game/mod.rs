@@ -1,3 +1,4 @@
+use event::game_event::GameEvent;
 use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
 
@@ -11,12 +12,21 @@ use crate::player::player_state::PlayerState;
 use crate::player::Player;
 use crate::team::Team;
 use rand::{thread_rng, Rng};
+use std::fmt;
 use std::time::Duration;
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
 pub enum Possession {
     Home,
     Away,
+}
+impl fmt::Display for Possession {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Possession::Home => write!(f, "Home"),
+            Possession::Away => write!(f, "Away"),
+        }
+    }
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct TeamState {
@@ -49,6 +59,7 @@ pub struct Game {
     teams: (Team, Team),
     events: Vec<game_event::GameEvent>,
     state: GameState,
+    sim: bool,
 }
 
 impl Game {
@@ -84,6 +95,7 @@ impl Game {
                         time: Duration::from_secs(720),
                     },
                     events: Vec::new(),
+                    sim: false,
                 };
                 Ok(game)
             }
@@ -133,7 +145,8 @@ impl Game {
         }
     }
 
-    pub fn handle_player_actions(&mut self) {
+    pub fn handle_player_actions(&mut self) -> Result<GameEvent, String> {
+        let mut event: Option<GameEvent> = None;
         let mut new_possession: Option<(Possession, usize)> = self.state.possession;
         let mut points_added: u8 = 0;
         if let Some((player, player_state)) = self.player_has_ball() {
@@ -199,6 +212,33 @@ impl Game {
                     None => {}
                 }
             }
+            match self.state.possession {
+                Some((Possession::Home, _)) => {
+                    event = Some(GameEvent::new(
+                        player_state.action.to_string(),
+                        self.state.time,
+                        self.state.period,
+                        Some(Possession::Home),
+                    ));
+                }
+                Some((Possession::Away, _)) => {
+                    event = Some(GameEvent::new(
+                        player_state.action.to_string(),
+                        self.state.time,
+                        self.state.period,
+                        Some(Possession::Away),
+                    ));
+                }
+
+                None => {
+                    event = Some(GameEvent::new(
+                        player_state.action.to_string(),
+                        self.state.time,
+                        self.state.period,
+                        None,
+                    ));
+                }
+            }
         }
 
         match self.state.possession {
@@ -212,6 +252,12 @@ impl Game {
         }
         self.change_possession(new_possession);
         self.update_player_states();
+
+        if event.is_none() {
+            return Err("No event generated".to_string());
+        } else {
+            Ok(event.unwrap())
+        }
     }
     pub fn update_player_states(&mut self) {
         self.state
@@ -251,43 +297,38 @@ impl Game {
             });
     }
 
-    pub fn generate_next_game_event(&mut self) -> Result<(), String> {
+    pub fn generate_next_game_event(&mut self) -> Result<GameEvent, String> {
         if self.events.len() == 0 {
             let _ = jump_ball::generate_jump_ball(self);
             self.state.time = Duration::from_secs(720);
         }
-        let mut game_end: bool = false;
-
-        while !game_end {
-            //Print score
-            println!("------------------------------------------------------");
-            println!("Home: {}, Away: {}", self.state.score.0, self.state.score.1);
-            let total_ms = self.state.time.as_millis();
-            let minutes = total_ms / 60000;
-            let seconds = (total_ms % 60000) / 1000;
-            let milliseconds = (total_ms % 1000) / 10;
-            let sc_seconds = self.state.shot_clock.as_secs();
-            let sc_milliseconds = self.state.shot_clock.as_millis() % 1000;
-            println!(
-                "Period: {} | Time: {:02}:{:02}:{:03} | Shotclock: {:02}:{:03}",
-                self.state.period, minutes, seconds, milliseconds, sc_seconds, sc_milliseconds
-            );
-            println!("Possession: {:?}", self.state.possession);
-            self.state.team_state.iter().enumerate().for_each(|(i, s)| {
-                println!("Team: {}", if i == 0 { "Home" } else { "Away" },);
-                for (_, p) in s.active_players.iter().enumerate() {
-                    println!(
-                        "Player: {} {} State: {:?}",
-                        p.0.first_name, p.0.last_name, p.1
-                    );
-                }
-            });
-            let _ = game_event::GameEvent::generate_next_game_event(self);
-            println!("------------------------------------------------------");
-            game_end = self.state.time == Duration::from_secs(0)
-                && self.state.period >= 4
-                && self.state.score.0 != self.state.score.1;
-        }
-        Ok(())
+        //Print score
+        println!("------------------------------------------------------");
+        println!("Home: {}, Away: {}", self.state.score.0, self.state.score.1);
+        let total_ms = self.state.time.as_millis();
+        let minutes = total_ms / 60000;
+        let seconds = (total_ms % 60000) / 1000;
+        let milliseconds = (total_ms % 1000) / 10;
+        let sc_seconds = self.state.shot_clock.as_secs();
+        let sc_milliseconds = self.state.shot_clock.as_millis() % 1000;
+        println!(
+            "Period: {} | Time: {:02}:{:02}:{:03} | Shotclock: {:02}:{:03}",
+            self.state.period, minutes, seconds, milliseconds, sc_seconds, sc_milliseconds
+        );
+        println!("Possession: {:?}", self.state.possession);
+        self.state.team_state.iter().enumerate().for_each(|(i, s)| {
+            println!("Team: {}", if i == 0 { "Home" } else { "Away" },);
+            for (_, p) in s.active_players.iter().enumerate() {
+                println!(
+                    "Player: {} {} State: {:?}",
+                    p.0.first_name, p.0.last_name, p.1
+                );
+            }
+        });
+        let event = game_event::GameEvent::generate_next_game_event(self);
+        println!("------------------------------------------------------");
+        //Wait 3 seconds
+        std::thread::sleep(std::time::Duration::from_secs(3));
+        Ok(event.unwrap())
     }
 }

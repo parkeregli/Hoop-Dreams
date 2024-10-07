@@ -9,11 +9,23 @@ pub struct GameEvent {
     pub action: String,
     pub time: Duration,
     pub period: u8,
-    pub possession: Possession,
+    pub possession: Option<Possession>,
+}
+
+enum GameSimState {
+    Load {},
+    Start {},
+    Stop {},
+    Finish {},
 }
 
 impl GameEvent {
-    pub fn new(action: String, time: Duration, period: u8, possession: Possession) -> GameEvent {
+    pub fn new(
+        action: String,
+        time: Duration,
+        period: u8,
+        possession: Option<Possession>,
+    ) -> GameEvent {
         GameEvent {
             action,
             time,
@@ -22,25 +34,61 @@ impl GameEvent {
         }
     }
 
-    pub fn generate_next_game_event(game: &mut Game) -> Result<(), String> {
+    pub fn is_game_end(&self) -> bool {
+        self.action == "End of Game"
+    }
+
+    pub fn generate_next_game_event(game: &mut Game) -> Result<GameEvent, String> {
         // Generate next event
         if game.state.time.as_secs() > 0 {
-            // Check if time is less than 0.3 seconds
-            if game.state.time <= Duration::from_millis(300) {
-                //Tip in event
-                println!("Tip in");
-                game.handle_player_actions();
-                game.state.time = Duration::from_secs(0);
-                return Ok(());
-            } else if game.state.time <= Duration::from_millis(500) {
-                //Enough time for a shot no dribble
-                println!("Shot no dribble");
-                game.handle_player_actions();
-                game.state.time = Duration::from_secs(0);
-                return Ok(());
+            /*
+                        // Check if time is less than 0.3 seconds
+                        if game.state.time <= Duration::from_millis(300) {
+                            //Tip in event
+                            println!("Tip in");
+                            game.handle_player_actions();
+                            game.state.time = Duration::from_secs(0);
+                            return Ok(());
+                        } else if game.state.time <= Duration::from_millis(500) {
+                            //Enough time for a shot no dribble
+                            println!("Shot no dribble");
+                            game.handle_player_actions();
+                            game.state.time = Duration::from_secs(0);
+                            return Ok(());
+                        } else {
+            */
+            //Default
+            let event = game.handle_player_actions();
+            //Generate random number between 1 and 24 float
+            let mut rng = rand::thread_rng();
+            let max = f32::min(6.0, game.state.time.as_secs_f32());
+            let random = rng.gen_range(1.0..max);
+            if random > game.state.shot_clock.as_secs_f32() {
+                println!("Shot clock ran out. Turnover!");
+                match game.state.possession {
+                    Some((Possession::Home, _)) => {
+                        game.change_possession(Some((Possession::Away, 3)));
+                    }
+                    Some((Possession::Away, _)) => {
+                        game.change_possession(Some((Possession::Home, 3)));
+                    }
+                    None => {
+                        //Jump ball
+                    }
+                }
             } else {
-                //Default
-                game.handle_player_actions();
+                game.state.shot_clock -= Duration::from_secs_f32(random)
+            }
+            game.state.time -= Duration::from_secs_f32(random);
+
+            return Ok(event.unwrap());
+        //    }
+        } else if game.state.period >= 4 {
+            if game.state.score.0 == game.state.score.1 {
+                //Overtime
+                game.state.period += 1;
+                game.state.time = Duration::from_secs(300);
+                let event = game.handle_player_actions();
                 //Generate random number between 1 and 24 float
                 let mut rng = rand::thread_rng();
                 let max = f32::min(6.0, game.state.time.as_secs_f32());
@@ -62,24 +110,28 @@ impl GameEvent {
                     game.state.shot_clock -= Duration::from_secs_f32(random)
                 }
                 game.state.time -= Duration::from_secs_f32(random);
+                game.events.push(event.clone().unwrap());
 
-                return Ok(());
-            }
-        } else if game.state.period >= 4 {
-            if game.state.score.0 == game.state.score.1 {
-                //Overtime
-                game.state.period += 1;
-                game.state.time = Duration::from_secs(300);
-                return Ok(());
+                return Ok(event.unwrap());
             }
             // Game is over
             game.state.time = Duration::from_secs(0);
-            return Ok(());
+            return Ok(GameEvent::new(
+                "End of Game".to_string(),
+                Duration::from_secs(0),
+                0,
+                None,
+            ));
         } else {
             // End of qtr
             game.state.period += 1;
             game.state.time = Duration::from_secs(720);
-            return Ok(());
+            return Ok(GameEvent::new(
+                "End of Quarter".to_string(),
+                Duration::from_secs(0),
+                0,
+                None,
+            ));
         }
     }
 }
