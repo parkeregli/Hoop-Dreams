@@ -1,3 +1,5 @@
+use std::sync::{atomic::AtomicBool, Arc, Mutex};
+
 use rusqlite::Connection;
 use tauri::{AppHandle, Manager, State};
 
@@ -6,6 +8,8 @@ use crate::game::Game;
 pub struct AppState {
     pub db: std::sync::Mutex<Option<Connection>>,
     pub game: std::sync::Mutex<Option<Game>>,
+    pub running: Arc<AtomicBool>,
+    pub sim_thread: Mutex<Option<std::thread::JoinHandle<()>>>,
 }
 
 pub trait ServiceAccess {

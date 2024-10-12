@@ -3,7 +3,7 @@
     <template #title>
       <div class="flex flex-wrap gap-3">
         <div class="flex justify-content-center text-white">
-          <ToggleButton @click="nextEvent()" v-model="checked" class="w-6rem" onLabel="Pause" offLabel="Play" />
+          <ToggleButton @click="toggle()" v-model="checked" class="w-6rem" onLabel="Pause" offLabel="Play" />
         </div>
       </div>
 
@@ -36,9 +36,16 @@ const items = [
 
 const appWebview = getCurrentWebviewWindow();
 
-const nextEvent = () => {
-  invoke("start_sim");
-}
+const isSimming = ref(false);
+
+const toggle = () => {
+  if (isSimming.value) {
+    invoke("stop_sim");
+  } else {
+    invoke("start_sim");
+  }
+  isSimming.value = !isSimming.value;
+};
 
 const checked = ref(false);
 </script>

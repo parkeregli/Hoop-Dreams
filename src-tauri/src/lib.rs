@@ -7,6 +7,7 @@ mod util;
 
 use crate::util::state::{AppState, ServiceAccess};
 
+use std::sync::{atomic::AtomicBool, Arc, Mutex};
 use tauri::{AppHandle, Emitter, Listener, Manager, State};
 use util::db;
 
@@ -44,24 +45,63 @@ fn load_game(app_handle: AppHandle, state: tauri::State<AppState>) -> game::Game
 
 fn simulate_game(app_handle: AppHandle) -> Result<(), Box<dyn std::error::Error>> {
     app_handle.emit("main", "simulation_started")?;
-    app_handle.game_mut(|game| {
-        let mut game_end = false;
-        while !game_end {
-            let event = game.generate_next_game_event().unwrap();
-            println!("{:?}", event);
-            let _ = app_handle.emit_to("main", "game_event", event.clone());
-            game_end = event.is_game_end();
+    let running = app_handle.state::<AppState>().running.clone();
+    let state = app_handle.state::<AppState>();
+    while running.load(std::sync::atomic::Ordering::SeqCst) {
+        let event = state
+            .game
+            .lock()
+            .unwrap()
+            .as_mut()
+            .ok_or("Game not initialized")?
+            .generate_next_game_event()?;
+
+        println!("{:?}", event);
+        app_handle.emit_to("main", "game_event", event.clone())?;
+
+        if event.is_game_end() {
+            break;
         }
-    });
+    }
     app_handle.emit("main", "simulation_ended")?;
     Ok(())
 }
 
 #[tauri::command]
-fn start_sim(app_handle: AppHandle) -> Result<(), String> {
-    std::thread::spawn(move || {
-        let _ = simulate_game(app_handle);
-    });
+fn start_sim(app_handle: AppHandle, state: tauri::State<AppState>) -> Result<(), String> {
+    let mut sim_thread = state.sim_thread.lock().unwrap();
+    if sim_thread.is_some() {
+        return Err("Simulation already running".to_string());
+    }
+
+    state
+        .running
+        .store(true, std::sync::atomic::Ordering::SeqCst);
+    let app_handle_clone = app_handle.clone();
+    let running = Arc::clone(&state.running);
+    *sim_thread = Some(std::thread::spawn(move || {
+        let _ = simulate_game(app_handle_clone);
+        running.store(false, std::sync::atomic::Ordering::SeqCst);
+    }));
+    Ok(())
+}
+
+#[tauri::command]
+fn stop_sim(state: tauri::State<AppState>) -> Result<(), String> {
+    if !state
+        .running
+        .swap(false, std::sync::atomic::Ordering::SeqCst)
+    {
+        return Err("Simulation not running".to_string());
+    }
+    println!("Stopping simulation");
+
+    let mut sim_thread = state.sim_thread.lock().unwrap();
+    if let Some(handle) = sim_thread.take() {
+        handle
+            .join()
+            .map_err(|_| "Failed to join simulation thread".to_string())?;
+    }
     Ok(())
 }
 
@@ -71,6 +111,8 @@ pub fn run() {
         .manage(AppState {
             db: Default::default(),
             game: Default::default(),
+            running: Default::default(),
+            sim_thread: Default::default(),
         })
         .invoke_handler(tauri::generate_handler![
             get_teams,
@@ -78,6 +120,7 @@ pub fn run() {
             get_team,
             load_game,
             start_sim,
+            stop_sim
         ])
         .setup(|app| {
             let webview = app.get_webview_window("main").unwrap();
