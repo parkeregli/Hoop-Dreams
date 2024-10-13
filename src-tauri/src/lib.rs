@@ -7,7 +7,7 @@ mod util;
 
 use crate::util::state::{AppState, ServiceAccess};
 
-use std::sync::{atomic::AtomicBool, Arc, Mutex};
+use std::sync::Arc;
 use tauri::{AppHandle, Emitter, Listener, Manager, State};
 use util::db;
 
@@ -58,6 +58,8 @@ fn simulate_game(app_handle: AppHandle) -> Result<(), Box<dyn std::error::Error>
 
         println!("{:?}", event);
         app_handle.emit_to("main", "game_event", event.clone())?;
+        let game_score = state.game.lock().unwrap().as_ref().unwrap().get_score();
+        app_handle.emit_to("main", "game_score", game_score)?;
 
         if event.is_game_end() {
             break;
@@ -123,7 +125,6 @@ pub fn run() {
             stop_sim
         ])
         .setup(|app| {
-            let webview = app.get_webview_window("main").unwrap();
             let path = app
                 .path()
                 .resolve("db", tauri::path::BaseDirectory::Config)
@@ -133,13 +134,6 @@ pub fn run() {
             let handle = app.handle().clone();
             let app_state: State<AppState> = handle.state();
             *app_state.db.lock().unwrap() = Some(db);
-
-            let handle = app.handle().clone();
-            webview.listen("start_sim", move |_| {
-                let state = handle.state::<AppState>();
-                let mut game = state.game.lock().unwrap();
-                let _ = game.as_mut().unwrap().generate_next_game_event();
-            });
             Ok(())
         })
         .run(tauri::generate_context!())

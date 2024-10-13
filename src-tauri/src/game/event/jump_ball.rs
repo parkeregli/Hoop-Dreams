@@ -2,7 +2,6 @@ use crate::game::game_event::GameEvent;
 use crate::game::{Game, Possession};
 use crate::util::rng::rng;
 use rand::{thread_rng, Rng};
-use std::time::Duration;
 
 pub fn generate_jump_ball(game: &mut Game) -> Result<(), String> {
     // Collect the necessary data without holding references
@@ -58,7 +57,7 @@ pub fn generate_jump_ball(game: &mut Game) -> Result<(), String> {
                     player.first_name,
                     player.last_name
                 ),
-                game.state.time - Duration::from_secs(1),
+                game.get_time(),
                 1,
                 Some(possession),
             );

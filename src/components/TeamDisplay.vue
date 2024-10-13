@@ -1,7 +1,7 @@
 <template>
-  <card class="homeAway border-solid border-cyan-600">
+  <card class="border-solid border-cyan-600">
     <template #title>
-      <h1 class="title">{{ team_name }}</h1>
+      <h1 class="title">{{ team_name }}: {{ score }}</h1>
     </template>
     <template #content>
       <DataView :value="mappedPlayers">
@@ -21,7 +21,11 @@
 <script setup lang="ts">
 import { invoke } from "@tauri-apps/api/core";
 import { ref, onMounted, computed } from "vue";
-const props = defineProps({ team_name: { type: String, required: true }, players: { type: Array, required: true } });
+const props = defineProps({
+  team_name: { type: String, required: true },
+  players: { type: Array, required: true },
+  score: { type: Number, required: true }
+});
 const mappedPlayers = computed(() => {
   return props.players.map((player) => {
     return {
@@ -30,12 +34,7 @@ const mappedPlayers = computed(() => {
       last_name: player[0].last_name
     };
   });
-
 });
-onMounted(() => {
-
-
-})
 </script>
 
 <style scoped>

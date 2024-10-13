@@ -146,6 +146,7 @@ impl Game {
     }
 
     pub fn handle_player_actions(&mut self) -> Result<GameEvent, String> {
+        let mut message = String::new();
         let mut event: Option<GameEvent> = None;
         let mut new_possession: Option<(Possession, usize)> = self.state.possession;
         let mut points_added: u8 = 0;
@@ -163,7 +164,7 @@ impl Game {
                 println!("RNG: {}, Shot Chance: {}", random, shot_chance);
                 if shot_chance > random {
                     //Shot made
-                    println!(
+                    message = format!(
                         "{} {} {:?} from {:?} and makes it!",
                         player.first_name,
                         player.last_name,
@@ -173,7 +174,7 @@ impl Game {
 
                     points_added = points;
                 } else {
-                    println!(
+                    message = format!(
                         "{} {} {:?} from {:?} and misses it!",
                         player.first_name,
                         player.last_name,
@@ -202,29 +203,58 @@ impl Game {
                             random_index = rng.gen_range(0..5);
                         }
                         new_possession = Some((Possession::Home, random_index));
+                        let has_ball =
+                            self.state.team_state[0].active_players[random_index].clone();
+                        message = format!(
+                            "{} {} passes to {} {} from {:?} to {:?}",
+                            player.first_name,
+                            player.last_name,
+                            has_ball.0.first_name,
+                            has_ball.0.last_name,
+                            player_state.current_area,
+                            has_ball.1.current_area,
+                        )
                     }
                     Some((Possession::Away, index)) => {
                         while index == random_index {
                             random_index = rng.gen_range(0..5);
                         }
                         new_possession = Some((Possession::Away, random_index));
+                        let has_ball =
+                            self.state.team_state[1].active_players[random_index].clone();
+                        message = format!(
+                            "{} {} passes to {} {} from {:?} to {:?}",
+                            player.first_name,
+                            player.last_name,
+                            has_ball.0.first_name,
+                            has_ball.0.last_name,
+                            player_state.current_area,
+                            has_ball.1.current_area,
+                        )
                     }
                     None => {}
                 }
             }
+            if player_state.action == PlayerAction::Drive {
+                message = format!(
+                    "{} {} drives to {:?}",
+                    player.first_name, player.last_name, player_state.current_area,
+                );
+            }
             match self.state.possession {
                 Some((Possession::Home, _)) => {
+                    //Convert time to mm:ss:ms
                     event = Some(GameEvent::new(
-                        player_state.action.to_string(),
-                        self.state.time,
+                        message,
+                        self.get_time(),
                         self.state.period,
                         Some(Possession::Home),
                     ));
                 }
                 Some((Possession::Away, _)) => {
                     event = Some(GameEvent::new(
-                        player_state.action.to_string(),
-                        self.state.time,
+                        message,
+                        self.get_time(),
                         self.state.period,
                         Some(Possession::Away),
                     ));
@@ -232,8 +262,8 @@ impl Game {
 
                 None => {
                     event = Some(GameEvent::new(
-                        player_state.action.to_string(),
-                        self.state.time,
+                        message,
+                        self.get_time(),
                         self.state.period,
                         None,
                     ));
@@ -258,6 +288,16 @@ impl Game {
         } else {
             Ok(event.unwrap())
         }
+    }
+    pub fn get_time(&self) -> String {
+        let minutes = self.state.time.as_secs() / 60;
+        let seconds = self.state.time.as_secs() % 60;
+        let milliseconds = self.state.time.as_millis() % 1000;
+        let time = format!("{:02}:{:02}:{:03}", minutes, seconds, milliseconds);
+        time
+    }
+    pub fn get_score(&self) -> (u8, u8) {
+        (self.state.score.0, self.state.score.1)
     }
     pub fn update_player_states(&mut self) {
         self.state

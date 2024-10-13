@@ -7,22 +7,15 @@ use std::time::Duration;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GameEvent {
     pub action: String,
-    pub time: Duration,
+    pub time: String,
     pub period: u8,
     pub possession: Option<Possession>,
-}
-
-enum GameSimState {
-    Load {},
-    Start {},
-    Stop {},
-    Finish {},
 }
 
 impl GameEvent {
     pub fn new(
         action: String,
-        time: Duration,
+        time: String,
         period: u8,
         possession: Option<Possession>,
     ) -> GameEvent {
@@ -76,6 +69,12 @@ impl GameEvent {
                         //Jump ball
                     }
                 }
+                return Ok(GameEvent::new(
+                    "Turnover".to_string(),
+                    game.get_time(),
+                    0,
+                    None,
+                ));
             } else {
                 game.state.shot_clock -= Duration::from_secs_f32(random)
             }
@@ -118,7 +117,7 @@ impl GameEvent {
             game.state.time = Duration::from_secs(0);
             return Ok(GameEvent::new(
                 "End of Game".to_string(),
-                Duration::from_secs(0),
+                game.get_time(),
                 0,
                 None,
             ));
@@ -128,7 +127,7 @@ impl GameEvent {
             game.state.time = Duration::from_secs(720);
             return Ok(GameEvent::new(
                 "End of Quarter".to_string(),
-                Duration::from_secs(0),
+                game.get_time(),
                 0,
                 None,
             ));
