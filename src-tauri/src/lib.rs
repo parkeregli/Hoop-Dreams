@@ -59,10 +59,10 @@ fn simulate_game(app_handle: AppHandle, speed: u8) -> Result<(), Box<dyn std::er
                 std::thread::sleep(std::time::Duration::from_secs(1));
             }
             2 => {
-                std::thread::sleep(std::time::Duration::from_millis(1));
+                std::thread::sleep(std::time::Duration::from_millis(500));
             }
             3 => {
-                std::thread::sleep(std::time::Duration::from_nanos(1));
+                std::thread::sleep(std::time::Duration::from_millis(100));
             }
             _ => {
                 std::thread::sleep(std::time::Duration::from_millis(1000));
