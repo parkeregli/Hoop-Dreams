@@ -43,22 +43,35 @@ fn load_game(app_handle: AppHandle, state: tauri::State<AppState>) -> game::Game
     return new_game;
 }
 
-fn simulate_game(app_handle: AppHandle) -> Result<(), Box<dyn std::error::Error>> {
+fn simulate_game(app_handle: AppHandle, speed: u8) -> Result<(), Box<dyn std::error::Error>> {
     app_handle.emit("main", "simulation_started")?;
     let running = app_handle.state::<AppState>().running.clone();
     let state = app_handle.state::<AppState>();
     while running.load(std::sync::atomic::Ordering::SeqCst) {
-        let event = state
-            .game
-            .lock()
-            .unwrap()
+        let mut game = state.game.lock().unwrap();
+        let event = game
             .as_mut()
             .ok_or("Game not initialized")?
             .generate_next_game_event()?;
 
+        match speed {
+            1 => {
+                std::thread::sleep(std::time::Duration::from_secs(1));
+            }
+            2 => {
+                std::thread::sleep(std::time::Duration::from_millis(1));
+            }
+            3 => {
+                std::thread::sleep(std::time::Duration::from_nanos(1));
+            }
+            _ => {
+                std::thread::sleep(std::time::Duration::from_millis(1000));
+            }
+        }
+
         println!("{:?}", event);
         app_handle.emit_to("main", "game_event", event.clone())?;
-        let game_score = state.game.lock().unwrap().as_ref().unwrap().get_score();
+        let game_score = game.as_ref().unwrap().get_score();
         app_handle.emit_to("main", "game_score", game_score)?;
 
         if event.is_game_end() {
@@ -70,7 +83,29 @@ fn simulate_game(app_handle: AppHandle) -> Result<(), Box<dyn std::error::Error>
 }
 
 #[tauri::command]
-fn start_sim(app_handle: AppHandle, state: tauri::State<AppState>) -> Result<(), String> {
+fn set_sim_speed(
+    app_handle: AppHandle,
+    state: tauri::State<AppState>,
+    speed: u8,
+) -> Result<(), String> {
+    //Stop the old thread
+    stop_sim(state.clone())?;
+    //Start the new thread
+    state
+        .running
+        .store(true, std::sync::atomic::Ordering::SeqCst);
+    if speed > 0 {
+        start_sim(app_handle.clone(), state.clone(), speed)?;
+    }
+    Ok(())
+}
+
+#[tauri::command]
+fn start_sim(
+    app_handle: AppHandle,
+    state: tauri::State<AppState>,
+    speed: u8,
+) -> Result<(), String> {
     let mut sim_thread = state.sim_thread.lock().unwrap();
     if sim_thread.is_some() {
         return Err("Simulation already running".to_string());
@@ -82,7 +117,7 @@ fn start_sim(app_handle: AppHandle, state: tauri::State<AppState>) -> Result<(),
     let app_handle_clone = app_handle.clone();
     let running = Arc::clone(&state.running);
     *sim_thread = Some(std::thread::spawn(move || {
-        let _ = simulate_game(app_handle_clone);
+        let _ = simulate_game(app_handle_clone, speed);
         running.store(false, std::sync::atomic::Ordering::SeqCst);
     }));
     Ok(())
@@ -96,8 +131,6 @@ fn stop_sim(state: tauri::State<AppState>) -> Result<(), String> {
     {
         return Err("Simulation not running".to_string());
     }
-    println!("Stopping simulation");
-
     let mut sim_thread = state.sim_thread.lock().unwrap();
     if let Some(handle) = sim_thread.take() {
         handle
@@ -122,7 +155,8 @@ pub fn run() {
             get_team,
             load_game,
             start_sim,
-            stop_sim
+            stop_sim,
+            set_sim_speed
         ])
         .setup(|app| {
             let path = app

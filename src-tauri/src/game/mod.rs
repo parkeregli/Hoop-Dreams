@@ -368,7 +368,7 @@ impl Game {
         let event = game_event::GameEvent::generate_next_game_event(self);
         println!("------------------------------------------------------");
         //Wait 3 seconds
-        std::thread::sleep(std::time::Duration::from_secs(3));
+        std::thread::sleep(std::time::Duration::from_millis(250));
         Ok(event.unwrap())
     }
 }

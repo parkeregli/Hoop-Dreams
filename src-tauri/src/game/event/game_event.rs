@@ -54,7 +54,7 @@ impl GameEvent {
             let event = game.handle_player_actions();
             //Generate random number between 1 and 24 float
             let mut rng = rand::thread_rng();
-            let max = f32::min(6.0, game.state.time.as_secs_f32());
+            let max = f32::min(8.0, game.state.time.as_secs_f32());
             let random = rng.gen_range(1.0..max);
             if random > game.state.shot_clock.as_secs_f32() {
                 println!("Shot clock ran out. Turnover!");

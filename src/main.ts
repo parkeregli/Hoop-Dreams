@@ -14,6 +14,7 @@ import Toolbar from "primevue/toolbar";
 import SplitButton from "primevue/splitbutton";
 import Menu from "primevue/menu";
 import ToggleButton from "primevue/togglebutton";
+import SelectButton from "primevue/selectbutton";
 
 import App from "./App.vue";
 import router from "./router";
@@ -32,6 +33,7 @@ app.component("DataView", DataView);
 app.component("Toolbar", Toolbar);
 app.component("SplitButton", SplitButton);
 app.component("ToggleButton", ToggleButton);
+app.component("SelectButton", SelectButton);
 app.component("Menu", Menu);
 app.use(createPinia());
 app.use(router);

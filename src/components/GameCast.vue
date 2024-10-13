@@ -6,7 +6,7 @@
       </div>
       <div class="flex flex-wrap gap-3">
         <div class="flex justify-content-center text-white">
-          <ToggleButton @click="toggle()" v-model="checked" class="w-6rem h-3rem" onLabel="Pause" offLabel="Play" />
+          <SelectButton @click="handleSimSpeed()" v-model="selected" :options="options" />
         </div>
       </div>
     </template>
@@ -37,6 +37,14 @@ const appWebview = getCurrentWebviewWindow();
 const scrollContainer = ref(null);
 const isSimming = ref(false);
 const checked = ref(false);
+const selected = ref(null);
+
+const options = [
+  'Stop',
+  'Play',
+  'x2',
+  'x3',
+]
 
 const unlisten = appWebview.listen('game_event', (event) => {
   items.value.push(event.payload);
@@ -48,15 +56,38 @@ const unlisten = appWebview.listen('game_event', (event) => {
   })
 });
 
-
-const toggle = () => {
+const stopSim = () => {
   if (isSimming.value) {
     invoke("stop_sim");
-  } else {
-    invoke("start_sim");
+    isSimming.value = false;
   }
-  isSimming.value = !isSimming.value;
-};
+}
+
+const startSim = (speed: number) => {
+  if (!isSimming.value) {
+    invoke("start_sim", { speed });
+    isSimming.value = true;
+  } else {
+    invoke("set_sim_speed", { speed });
+  }
+}
+
+const handleSimSpeed = () => {
+  switch (selected.value) {
+    case "Stop":
+      stopSim();
+      break;
+    case "Play":
+      startSim(1);
+      break;
+    case "x2":
+      startSim(2);
+      break;
+    case "x3":
+      startSim(3);
+      break;
+  }
+}
 
 const scrollToBottom = () => {
   if (scrollContainer.value) {
