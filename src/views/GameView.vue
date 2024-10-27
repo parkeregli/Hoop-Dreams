@@ -2,7 +2,7 @@
   <div class="flex-column justify-content-between align-content-between">
     <div class="w-full">
       <Toolbar></Toolbar>
-      <div v-if="teams.length > 0" class="row align-items-stretch justify-content-between h-22rem">
+      <div v-if="teams.length > 0" class="row align-items-stretch justify-content-between h-1/4">
         <div class="w-full h-full">
           <TeamDisplay class="h-full" :score="game.state.score[0]" :team_name="teams[0].name"
             :players="game.state.team_state[0].active_players" />
@@ -37,7 +37,6 @@ import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import CourtSim from "@/components/CourtSim.vue";
 const appWindow = getCurrentWebviewWindow()
 const unlisten = appWindow.listen('game_score', (event) => {
-  console.log(event.payload)
   game.value.state.score = event.payload
 })
 
@@ -66,7 +65,6 @@ const loadGame = async () => {
       throw new Error("Failed to load game");
     }
     game.value = gameRes;
-    console.log(game.value.state.score);
     teams.value = gameRes.teams;
   } catch (error) {
     console.error(error);
@@ -90,7 +88,8 @@ onMounted(async () => {
 }
 
 .court-wrapper {
-  max-height: 50%;
-  max-width: 50%;
+  max-height: 100%;
+  max-width: 100%;
+  padding: 20px;
 }
 </style>
