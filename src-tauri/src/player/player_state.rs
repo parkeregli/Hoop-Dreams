@@ -1,4 +1,4 @@
-use crate::game::court::{self, is_between_basket, CourtArea};
+use crate::game::court::{self, go_towards, is_between_basket, CourtArea};
 use crate::player::player_attributes;
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -123,7 +123,12 @@ impl PlayerState {
         self.action = actions[index]
     }
     pub fn generate_defense_player_next_area(&mut self, opp_area: CourtArea) {
-        self.current_area = court::defend_towards(self.current_area, opp_area);
+        if is_between_basket(self.current_area, opp_area) {
+            self.current_area = go_towards(self.current_area, opp_area);
+        } else {
+            let goal_area = court::defend_towards(self.current_area, opp_area);
+            self.current_area = go_towards(self.current_area, goal_area)
+        }
     }
     pub fn generate_offensive_player_next_area(&mut self) {
         let available_areas = court::can_move_to(self.current_area);
@@ -154,7 +159,6 @@ impl PlayerState {
         } else if is_defense.0 {
             match is_defense.1 {
                 Some(state) => {
-                    println!("Player defended state: {:#?}", state);
                     self.generate_defense_player_next_area(state.current_area);
                 }
                 None => self.generate_defensive_player_action(),

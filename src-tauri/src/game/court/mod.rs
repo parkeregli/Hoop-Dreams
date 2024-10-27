@@ -62,10 +62,10 @@ pub fn get_position_weight(area: CourtArea) -> f32 {
         CourtArea::ElbowLeft => 2.0,
         CourtArea::ElbowRight => 2.0,
         CourtArea::FreeThrowLine => 2.2,
-        CourtArea::MidrangeBaselineLeft => 2.3,
-        CourtArea::MidrangeBaselineRight => 2.3,
-        CourtArea::MidrangeWingLeft => 2.5,
-        CourtArea::MidrangeWingRight => 2.5,
+        CourtArea::MidrangeBaselineLeft => 2.5,
+        CourtArea::MidrangeBaselineRight => 2.5,
+        CourtArea::MidrangeWingLeft => 2.3,
+        CourtArea::MidrangeWingRight => 2.3,
         CourtArea::MidrangeCenter => 2.7,
 
         // Three point line positions
@@ -80,10 +80,10 @@ pub fn get_position_weight(area: CourtArea) -> f32 {
         CourtArea::Backcourt => 5.0,
 
         // Out of bounds and boundaries
-        CourtArea::SidelineLeft => 10.0,
-        CourtArea::SidelineRight => 10.0,
-        CourtArea::BaselineLeft => 10.0,
-        CourtArea::BaselineRight => 10.0,
+        CourtArea::SidelineLeft => f32::INFINITY,
+        CourtArea::SidelineRight => f32::INFINITY,
+        CourtArea::BaselineLeft => f32::INFINITY,
+        CourtArea::BaselineRight => f32::INFINITY,
         CourtArea::OutOfBounds => f32::INFINITY,
     }
 }
@@ -553,15 +553,7 @@ pub fn can_move_to(current_area: CourtArea) -> HashSet<CourtArea> {
 }
 
 pub fn go_towards(area: CourtArea, target: CourtArea) -> CourtArea {
-    println!("Moving {:?} towards {:?}", area, target);
     if let Some(path) = find_path(area, target) {
-        println!(
-            "Path from {:?} to {:?} in {:?} moves: {:?}",
-            area,
-            target,
-            path,
-            path.len()
-        );
         if path.len() == 1 {
             return path[0]; // Return the next step in the path
         }
@@ -574,7 +566,6 @@ pub fn go_towards(area: CourtArea, target: CourtArea) -> CourtArea {
 }
 
 pub fn defend_towards(area: CourtArea, target: CourtArea) -> CourtArea {
-    println!("Defending {:?} from {:?}", CourtArea::Basket, target);
     // Get path between target area and the basket
     if let Some(path) = find_path(target, CourtArea::Basket) {
         let mut area_selected = target;
@@ -583,7 +574,6 @@ pub fn defend_towards(area: CourtArea, target: CourtArea) -> CourtArea {
         } else if path.len() >= 2 {
             area_selected = path[1];
         }
-        println!("Selected area: {:?} from path: {:?}", area_selected, path);
         return area_selected;
     }
     area // Return current position if no path found
