@@ -291,7 +291,10 @@ impl CourtArea {
             CourtArea::Backcourt
             | CourtArea::OutOfBounds
             | CourtArea::SidelineLeft
-            | CourtArea::SidelineRight => false,
+            | CourtArea::SidelineRight
+            | CourtArea::ThreePointLineCenter
+            | CourtArea::ThreePointLineWingLeft
+            | CourtArea::ThreePointLineWingRight => false,
             _ => true,
         }
     }

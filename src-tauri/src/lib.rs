@@ -71,6 +71,11 @@ fn simulate_game(app_handle: AppHandle, speed: u8) -> Result<(), Box<dyn std::er
 
         println!("{:?}", event);
         app_handle.emit_to("main", "game_event", event.clone())?;
+        app_handle.emit_to(
+            "main",
+            "player_states",
+            game.as_ref().unwrap().get_player_states(),
+        )?;
         let game_score = game.as_ref().unwrap().get_score();
         app_handle.emit_to("main", "game_score", game_score)?;
 

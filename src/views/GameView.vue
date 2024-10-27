@@ -27,7 +27,7 @@
 
 <script setup lang="ts">
 import { invoke } from "@tauri-apps/api/core";
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import GameCast from "@/components/GameCast.vue";
 import TeamDisplay from "@/components/TeamDisplay.vue";
 import TeamStats from "@/components/TeamStats.vue";
@@ -46,17 +46,6 @@ const teams = ref([]);
 const game = ref({});
 const loading = ref(false);
 
-const teamStats = [
-  { stat: "Team", home: "Home Logo", away: "Away Logo" },
-  { stat: "FG", home: "Home", away: "Away" },
-  { stat: "FG %", home: "Home", away: "Away" },
-  { stat: "3PT", home: "Home", away: "Away" },
-  { stat: "3PT %", home: "Home", away: "Away" },
-  { stat: "FT", home: "Home", away: "Away" },
-  { stat: "FT  %", home: "Home", away: "Away" },
-  { stat: "REB", home: "Home", away: "Away" },
-  { stat: "TO", home: "Home", away: "Away" },
-];
 const loadGame = async () => {
   try {
     loading.value = true;
@@ -88,8 +77,7 @@ onMounted(async () => {
 }
 
 .court-wrapper {
-  max-height: 100%;
-  max-width: 100%;
+  max-width: 30%;
   padding: 20px;
 }
 </style>

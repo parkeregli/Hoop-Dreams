@@ -120,7 +120,7 @@ impl Game {
                     s.active_players.iter_mut().enumerate().for_each(|(_, p)| {
                         if p.1.current_area.is_front_court() {
                             p.1.current_area = CourtArea::Backcourt;
-                        } else if p.1.current_area == CourtArea::Backcourt {
+                        } else {
                             p.1.current_area = CourtArea::Center;
                         }
                     })
@@ -297,6 +297,15 @@ impl Game {
     }
     pub fn get_score(&self) -> (u8, u8) {
         (self.state.score.0, self.state.score.1)
+    }
+    pub fn get_player_states(&self) -> Vec<(Player, PlayerState)> {
+        let home_players = self.state.team_state[0].active_players.clone();
+        let away_players = self.state.team_state[1].active_players.clone();
+        let all_players = home_players
+            .into_iter()
+            .chain(away_players.into_iter())
+            .collect();
+        all_players
     }
     pub fn update_player_states(&mut self) -> Result<(), String> {
         let game_state = self.state.clone();

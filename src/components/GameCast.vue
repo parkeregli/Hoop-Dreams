@@ -16,7 +16,8 @@
           <template #list="slotProps">
             <div class="game-cast-items" ref="scrollContainer">
               <div v-for="(item, index) in slotProps.items" class="game-cast-item" :key="index">
-                <span class="timestamp"> {{ item.time }} </span> -
+                <span>Possession: {{ item.possession }} </span> | <span>Period: {{ item.period }} </span> | <span
+                  class="timestamp"> {{ item.time }} </span> -
                 {{ item.action }}
               </div>
             </div>
