@@ -1,4 +1,4 @@
-use crate::game::court::{self, CourtArea};
+use crate::game::court::{self, is_between_basket, CourtArea};
 use crate::player::player_attributes;
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -38,34 +38,16 @@ pub struct PlayerState {
 }
 
 impl PlayerState {
-    pub fn new(is_offense: bool, area: Option<court::CourtArea>) -> PlayerState {
+    pub fn new(area: Option<court::CourtArea>) -> PlayerState {
         match area {
-            Some(value) => {
-                if is_offense {
-                    PlayerState {
-                        action: PlayerAction::Idle,
-                        current_area: value,
-                    }
-                } else {
-                    PlayerState {
-                        action: PlayerAction::Idle,
-                        current_area: value,
-                    }
-                }
-            }
-            None => {
-                if is_offense {
-                    PlayerState {
-                        action: PlayerAction::Idle,
-                        current_area: court::CourtArea::Center,
-                    }
-                } else {
-                    PlayerState {
-                        action: PlayerAction::Idle,
-                        current_area: court::CourtArea::Center,
-                    }
-                }
-            }
+            Some(value) => PlayerState {
+                action: PlayerAction::Idle,
+                current_area: value,
+            },
+            None => PlayerState {
+                action: PlayerAction::Idle,
+                current_area: court::CourtArea::Center,
+            },
         }
     }
     pub fn generate_offensive_player_action(
@@ -140,7 +122,10 @@ impl PlayerState {
         let index = rand::random::<usize>() % actions.len();
         self.action = actions[index]
     }
-    pub fn generate_player_next_area(&mut self) {
+    pub fn generate_defense_player_next_area(&mut self, opp_area: CourtArea) {
+        self.current_area = court::defend_towards(self.current_area, opp_area);
+    }
+    pub fn generate_offensive_player_next_area(&mut self) {
         let available_areas = court::can_move_to(self.current_area);
         let index = rand::random::<usize>() % available_areas.len();
         self.current_area = available_areas.into_iter().nth(index).unwrap()
@@ -156,14 +141,28 @@ impl PlayerState {
     pub fn generate_next_player_state(
         &mut self,
         attributes: &player_attributes::PlayerAttributes,
-        is_offense: bool,
-        has_ball: bool,
-    ) {
-        if is_offense {
-            self.generate_offensive_player_action(attributes, has_ball);
-        } else {
-            self.generate_defensive_player_action();
+        is_offense: (bool, bool),
+        is_defense: (bool, Option<&PlayerState>),
+    ) -> Result<(), String> {
+        if is_offense.0 == is_defense.0 {
+            return Err("Both offense and defense are the same".to_string());
         }
-        self.generate_player_next_area();
+        if is_offense.0 {
+            self.generate_offensive_player_action(attributes, is_offense.1);
+            self.generate_offensive_player_next_area();
+            return Ok(());
+        } else if is_defense.0 {
+            match is_defense.1 {
+                Some(state) => {
+                    println!("Player defended state: {:#?}", state);
+                    self.generate_defense_player_next_area(state.current_area);
+                }
+                None => self.generate_defensive_player_action(),
+            }
+            self.generate_defensive_player_action();
+            return Ok(());
+        }
+
+        Err("Neither offense nor defense".to_string())
     }
 }

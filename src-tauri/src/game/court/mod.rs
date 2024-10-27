@@ -1,8 +1,10 @@
 use serde::{Deserialize, Serialize};
-use std::collections::HashSet;
+use std::cmp::Ordering;
+use std::collections::{BinaryHeap, HashMap, HashSet};
 
 #[derive(Debug, Clone, Copy, Hash, Eq, PartialEq, Serialize, Deserialize)]
 pub enum CourtArea {
+    Basket,
     // Inside the three-point line
     RestrictedAreaLeft,
     RestrictedAreaMiddle,
@@ -41,10 +43,192 @@ pub enum CourtArea {
     OutOfBounds,
 }
 
+// Function to get the position weight for a court area
+pub fn get_position_weight(area: CourtArea) -> f32 {
+    match area {
+        // Closest to basket - highest reward/lowest cost
+        CourtArea::Basket => 0.0,
+        CourtArea::RestrictedAreaMiddle => 1.0,
+        CourtArea::RestrictedAreaLeft => 1.2,
+        CourtArea::RestrictedAreaRight => 1.2,
+
+        // Next closest positions
+        CourtArea::LowPostLeft => 1.5,
+        CourtArea::LowPostRight => 1.5,
+        CourtArea::ShortCornerLeft => 1.7,
+        CourtArea::ShortCornerRight => 1.7,
+
+        // Mid-range positions
+        CourtArea::ElbowLeft => 2.0,
+        CourtArea::ElbowRight => 2.0,
+        CourtArea::FreeThrowLine => 2.2,
+        CourtArea::MidrangeBaselineLeft => 2.3,
+        CourtArea::MidrangeBaselineRight => 2.3,
+        CourtArea::MidrangeWingLeft => 2.5,
+        CourtArea::MidrangeWingRight => 2.5,
+        CourtArea::MidrangeCenter => 2.7,
+
+        // Three point line positions
+        CourtArea::ThreePointLineCornerLeft => 3.0,
+        CourtArea::ThreePointLineCornerRight => 3.0,
+        CourtArea::ThreePointLineWingLeft => 3.2,
+        CourtArea::ThreePointLineWingRight => 3.2,
+        CourtArea::ThreePointLineCenter => 3.5,
+
+        // Furthest positions
+        CourtArea::Center => 4.0,
+        CourtArea::Backcourt => 5.0,
+
+        // Out of bounds and boundaries
+        CourtArea::SidelineLeft => 10.0,
+        CourtArea::SidelineRight => 10.0,
+        CourtArea::BaselineLeft => 10.0,
+        CourtArea::BaselineRight => 10.0,
+        CourtArea::OutOfBounds => f32::INFINITY,
+    }
+}
+
+struct Node {
+    area: CourtArea,
+    f_score: f32,
+    g_score: f32,
+}
+
+impl PartialEq for Node {
+    fn eq(&self, other: &Self) -> bool {
+        self.f_score.to_bits() == other.f_score.to_bits()
+    }
+}
+
+impl Eq for Node {}
+
+impl Ord for Node {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        other.f_score.partial_cmp(&self.f_score).unwrap()
+    }
+}
+
+impl PartialOrd for Node {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+// Modified A* implementation that uses weights
+pub fn find_path(start: CourtArea, goal: CourtArea) -> Option<Vec<CourtArea>> {
+    // Handle same location case
+    if start == goal {
+        return Some(vec![start]);
+    }
+
+    let mut open_set = BinaryHeap::new();
+    let mut came_from: HashMap<CourtArea, CourtArea> = HashMap::new();
+    let mut g_scores: HashMap<CourtArea, f32> = HashMap::new();
+    let mut closed_set = HashSet::new();
+
+    // Initialize start node
+    g_scores.insert(start, 0.0);
+    open_set.push(Node {
+        area: start,
+        f_score: get_position_weight(start),
+        g_score: 0.0,
+    });
+
+    while let Some(current) = open_set.pop() {
+        if current.area == goal {
+            // Reconstruct path
+            let mut path = vec![goal];
+            let mut current_area = goal;
+
+            while let Some(&prev) = came_from.get(&current_area) {
+                path.push(prev);
+                current_area = prev;
+            }
+
+            path.reverse();
+            return Some(path);
+        }
+
+        if closed_set.contains(&current.area) {
+            continue;
+        }
+
+        closed_set.insert(current.area);
+
+        // Get neighboring areas
+        for &next in can_move_to(current.area).iter() {
+            if closed_set.contains(&next) {
+                continue;
+            }
+
+            // Cost to move is the weight of the next position
+            let tentative_g_score = current.g_score + get_position_weight(next);
+
+            if tentative_g_score < *g_scores.get(&next).unwrap_or(&f32::INFINITY) {
+                // This path is better than any previous one
+                came_from.insert(next, current.area);
+                g_scores.insert(next, tentative_g_score);
+
+                // f_score is current cost plus estimated cost to goal
+                let h_score = get_position_weight(next); // heuristic
+                let f_score = tentative_g_score + h_score;
+
+                open_set.push(Node {
+                    area: next,
+                    f_score,
+                    g_score: tentative_g_score,
+                });
+            }
+        }
+    }
+
+    None // No path found
+}
+
+#[test]
+fn test_long_paths() {
+    // Let's verify each path is actually possible by checking the graph connections
+    let cases = vec![
+        (CourtArea::Backcourt, CourtArea::RestrictedAreaMiddle, 4),
+        // Path from left three point corner to right three point corner:
+        // ThreePointLineCornerLeft -> ThreePointLineWingLeft ->
+        // ThreePointLineCenter -> ThreePointLineWingRight -> ThreePointLineCornerRight
+        (
+            CourtArea::ThreePointLineCornerLeft,
+            CourtArea::ThreePointLineCornerRight,
+            4,
+        ),
+    ];
+
+    for (start, goal, expected_moves) in cases {
+        let result = find_path(start, goal);
+        assert!(
+            result.is_some(),
+            "Failed to find path from {:?} to {:?}",
+            start,
+            goal
+        );
+
+        let path = result.unwrap();
+        assert_eq!(
+            path.len(),
+            expected_moves,
+            "Path length {} from {:?} to {:?} not equal to expected {}",
+            path.len(),
+            start,
+            goal,
+            expected_moves
+        );
+        assert_eq!(path[0], start);
+        assert_eq!(*path.last().unwrap(), goal);
+    }
+}
+
 impl CourtArea {
     pub fn shot_chance(&self) -> f32 {
         match self {
-            CourtArea::RestrictedAreaLeft
+            CourtArea::Basket
+            | CourtArea::RestrictedAreaLeft
             | CourtArea::RestrictedAreaRight
             | CourtArea::RestrictedAreaMiddle => 1.0,
             CourtArea::LowPostRight | CourtArea::LowPostLeft => 0.9,
@@ -107,9 +291,7 @@ impl CourtArea {
             CourtArea::Backcourt
             | CourtArea::OutOfBounds
             | CourtArea::SidelineLeft
-            | CourtArea::SidelineRight
-            | CourtArea::BaselineLeft
-            | CourtArea::BaselineRight => false,
+            | CourtArea::SidelineRight => false,
             _ => true,
         }
     }
@@ -117,15 +299,20 @@ impl CourtArea {
 
 pub fn can_move_to(current_area: CourtArea) -> HashSet<CourtArea> {
     match current_area {
+        CourtArea::Basket => [
+            CourtArea::RestrictedAreaMiddle,
+            CourtArea::RestrictedAreaRight,
+            CourtArea::RestrictedAreaLeft,
+        ]
+        .into(),
         CourtArea::RestrictedAreaLeft => [
             CourtArea::RestrictedAreaLeft,
             CourtArea::RestrictedAreaMiddle,
-            CourtArea::RestrictedAreaRight,
             CourtArea::LowPostLeft,
             CourtArea::ShortCornerLeft,
             CourtArea::ElbowLeft,
-            CourtArea::ElbowRight,
             CourtArea::FreeThrowLine,
+            CourtArea::Basket,
         ]
         .into(),
         CourtArea::RestrictedAreaMiddle => [
@@ -134,22 +321,20 @@ pub fn can_move_to(current_area: CourtArea) -> HashSet<CourtArea> {
             CourtArea::RestrictedAreaRight,
             CourtArea::LowPostLeft,
             CourtArea::LowPostRight,
-            CourtArea::ShortCornerLeft,
-            CourtArea::ShortCornerRight,
             CourtArea::ElbowLeft,
             CourtArea::ElbowRight,
             CourtArea::FreeThrowLine,
+            CourtArea::Basket,
         ]
         .into(),
         CourtArea::RestrictedAreaRight => [
-            CourtArea::RestrictedAreaLeft,
             CourtArea::RestrictedAreaMiddle,
             CourtArea::RestrictedAreaRight,
             CourtArea::LowPostRight,
             CourtArea::ShortCornerRight,
-            CourtArea::ElbowLeft,
             CourtArea::ElbowRight,
             CourtArea::FreeThrowLine,
+            CourtArea::Basket,
         ]
         .into(),
         CourtArea::LowPostLeft => [
@@ -277,7 +462,6 @@ pub fn can_move_to(current_area: CourtArea) -> HashSet<CourtArea> {
             CourtArea::ThreePointLineWingLeft,
             CourtArea::MidrangeBaselineLeft,
             CourtArea::MidrangeWingLeft,
-            CourtArea::ShortCornerLeft,
         ]
         .into(),
         CourtArea::ThreePointLineCornerRight => [
@@ -285,7 +469,6 @@ pub fn can_move_to(current_area: CourtArea) -> HashSet<CourtArea> {
             CourtArea::ThreePointLineWingRight,
             CourtArea::MidrangeBaselineRight,
             CourtArea::MidrangeWingRight,
-            CourtArea::ShortCornerRight,
         ]
         .into(),
         CourtArea::ThreePointLineWingLeft => [
@@ -366,5 +549,51 @@ pub fn can_move_to(current_area: CourtArea) -> HashSet<CourtArea> {
         ]
         .into(),
         CourtArea::OutOfBounds => [CourtArea::OutOfBounds].into(),
+    }
+}
+
+pub fn go_towards(area: CourtArea, target: CourtArea) -> CourtArea {
+    println!("Moving {:?} towards {:?}", area, target);
+    if let Some(path) = find_path(area, target) {
+        println!(
+            "Path from {:?} to {:?} in {:?} moves: {:?}",
+            area,
+            target,
+            path,
+            path.len()
+        );
+        if path.len() == 1 {
+            return path[0]; // Return the next step in the path
+        }
+        if path.len() >= 2 {
+            return path[1]; // Return the next step in the path
+        }
+    }
+    println!("No path found from {:?} to {:?}", area, target);
+    area // Return current position if no path found
+}
+
+pub fn defend_towards(area: CourtArea, target: CourtArea) -> CourtArea {
+    println!("Defending {:?} from {:?}", CourtArea::Basket, target);
+    // Get path between target area and the basket
+    if let Some(path) = find_path(target, CourtArea::Basket) {
+        let mut area_selected = target;
+        if path.len() == 1 {
+            area_selected = path[0];
+        } else if path.len() >= 2 {
+            area_selected = path[1];
+        }
+        println!("Selected area: {:?} from path: {:?}", area_selected, path);
+        return area_selected;
+    }
+    area // Return current position if no path found
+}
+
+pub fn is_between_basket(area: CourtArea, target: CourtArea) -> bool {
+    let path = find_path(target, CourtArea::Basket);
+    if let Some(path) = path {
+        path.contains(&area)
+    } else {
+        false
     }
 }

@@ -55,6 +55,7 @@ impl PlayerAttributes {
             CourtArea::RestrictedAreaLeft
             | CourtArea::RestrictedAreaRight
             | CourtArea::RestrictedAreaMiddle
+            | CourtArea::Basket
             | CourtArea::LowPostLeft
             | CourtArea::LowPostRight
             | CourtArea::ShortCornerLeft

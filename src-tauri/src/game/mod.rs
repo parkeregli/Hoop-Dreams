@@ -36,7 +36,7 @@ struct TeamState {
 impl TeamState {
     pub fn new(starters: [Player; 5], bench: Vec<Player>) -> Self {
         Self {
-            active_players: starters.map(|p| (p, PlayerState::new(false, None))),
+            active_players: starters.map(|p| (p, PlayerState::new(None))),
             bench: (Vec::new(), Vec::new()),
         }
     }
@@ -120,8 +120,7 @@ impl Game {
                     s.active_players.iter_mut().enumerate().for_each(|(_, p)| {
                         if p.1.current_area.is_front_court() {
                             p.1.current_area = CourtArea::Backcourt;
-                        }
-                        if p.1.current_area == CourtArea::Backcourt {
+                        } else if p.1.current_area == CourtArea::Backcourt {
                             p.1.current_area = CourtArea::Center;
                         }
                     })
@@ -281,7 +280,7 @@ impl Game {
             None => {}
         }
         self.change_possession(new_possession);
-        self.update_player_states();
+        let _ = self.update_player_states();
 
         if event.is_none() {
             return Err("No event generated".to_string());
@@ -299,7 +298,8 @@ impl Game {
     pub fn get_score(&self) -> (u8, u8) {
         (self.state.score.0, self.state.score.1)
     }
-    pub fn update_player_states(&mut self) {
+    pub fn update_player_states(&mut self) -> Result<(), String> {
+        let game_state = self.state.clone();
         self.state
             .team_state
             .iter_mut()
@@ -310,31 +310,56 @@ impl Game {
                         Some((Possession::Home, index)) => {
                             if i == 0 {
                                 if j == index {
-                                    p.1.generate_next_player_state(p.0.attributes(), true, true);
+                                    let _ = p.1.generate_next_player_state(
+                                        p.0.attributes(),
+                                        (true, true),
+                                        (false, None),
+                                    );
                                 } else {
-                                    p.1.generate_next_player_state(p.0.attributes(), true, false)
+                                    let _ = p.1.generate_next_player_state(
+                                        p.0.attributes(),
+                                        (true, false),
+                                        (false, None),
+                                    );
                                 }
                             } else {
-                                p.1.generate_next_player_state(p.0.attributes(), false, false)
+                                let _ = p.1.generate_next_player_state(
+                                    p.0.attributes(),
+                                    (false, false),
+                                    (true, Some(&game_state.team_state[0].active_players[j].1)),
+                                );
                             }
                         }
                         Some((Possession::Away, index)) => {
                             if i == 1 {
                                 if j == index {
-                                    p.1.generate_next_player_state(p.0.attributes(), true, true);
+                                    let _ = p.1.generate_next_player_state(
+                                        p.0.attributes(),
+                                        (true, true),
+                                        (false, None),
+                                    );
                                 } else {
-                                    p.1.generate_next_player_state(p.0.attributes(), true, false)
+                                    let _ = p.1.generate_next_player_state(
+                                        p.0.attributes(),
+                                        (true, false),
+                                        (false, None),
+                                    );
                                 }
                             } else {
-                                p.1.generate_next_player_state(p.0.attributes(), false, false)
+                                let _ = p.1.generate_next_player_state(
+                                    p.0.attributes(),
+                                    (false, false),
+                                    (true, Some(&game_state.team_state[1].active_players[j].1)),
+                                );
                             }
                         }
                         None => {
-                            p.1.generate_next_player_state(p.0.attributes(), false, false)
+                            return;
                         }
                     }
                 })
             });
+        Ok(())
     }
 
     pub fn generate_next_game_event(&mut self) -> Result<GameEvent, String> {
