@@ -1,5 +1,5 @@
 <template>
-  <div class="h-full row flex-column justify-content-between align-content-between">
+  <div class="flex-column justify-content-between align-content-between">
     <div class="w-full">
       <Toolbar></Toolbar>
       <div v-if="teams.length > 0" class="row align-items-stretch justify-content-between h-22rem">
@@ -16,6 +16,9 @@
         </div>
       </div>
     </div>
+    <div class="court-wrapper flex justify-center m-auto my-4">
+      <CourtSim />
+    </div>
     <div class="game-cast-wrapper" style="height: 350px">
       <GameCast />
     </div>
@@ -31,6 +34,7 @@ import TeamStats from "@/components/TeamStats.vue";
 import { useRouter, useRoute } from "vue-router";
 import Toolbar from "@/components/Toolbar.vue";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
+import CourtSim from "@/components/CourtSim.vue";
 const appWindow = getCurrentWebviewWindow()
 const unlisten = appWindow.listen('game_score', (event) => {
   console.log(event.payload)
@@ -79,14 +83,14 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.row {
-  width: 100%;
-  height: 100%;
-}
-
 .game-cast-wrapper {
   flex: 1;
   min-height: 0;
   overflow: hidden;
+}
+
+.court-wrapper {
+  max-height: 50%;
+  max-width: 50%;
 }
 </style>
