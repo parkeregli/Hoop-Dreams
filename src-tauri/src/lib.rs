@@ -56,16 +56,16 @@ fn simulate_game(app_handle: AppHandle, speed: u8) -> Result<(), Box<dyn std::er
 
         match speed {
             1 => {
-                std::thread::sleep(std::time::Duration::from_secs(1));
+                std::thread::sleep(std::time::Duration::from_secs(2));
             }
             2 => {
-                std::thread::sleep(std::time::Duration::from_millis(500));
+                std::thread::sleep(std::time::Duration::from_secs(1));
             }
             3 => {
-                std::thread::sleep(std::time::Duration::from_millis(100));
+                std::thread::sleep(std::time::Duration::from_millis(500));
             }
             _ => {
-                std::thread::sleep(std::time::Duration::from_millis(1000));
+                std::thread::sleep(std::time::Duration::from_secs(3));
             }
         }
 

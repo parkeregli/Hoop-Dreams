@@ -1,19 +1,14 @@
 <template>
-  <card class="border-solid border-cyan-600">
+  <Card>
     <template #title>
-      <h1 class="title">{{ team_name }}: {{ score }}</h1>
+      <h3 class="title">{{ team_name }}: {{ score }}</h3>
     </template>
     <template #content>
-      <DataView :value="mappedPlayers">
-        <template #list="slotProps">
-          <div class="flex flex-column">
-            <div v-for="(item, index) in slotProps.items" :key="index">
-              <span class="position"> {{ item.position }} </span> -
-              {{ item.first_name }} {{ item.last_name }}
-            </div>
-          </div>
-        </template>
-      </DataView>
+      <DataTable size="small" :value="mappedPlayers">
+        <Column field="first_name" header="First Name"></Column>
+        <Column field="last_name" header="Last Name"></Column>
+        <Column field="position" header="Position"></Column>
+      </DataTable>
     </template>
   </card>
 </template>

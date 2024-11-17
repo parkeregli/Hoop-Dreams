@@ -1,8 +1,8 @@
 <template>
-  <Card class="dataview-container">
+  <Card class="h-full">
     <template #title>
       <div class="flex justify-content-center">
-        <h1 class="title">Game Cast</h1>
+        <h3 class="title">Game Cast</h3>
       </div>
       <div class="flex flex-wrap gap-3">
         <div class="flex justify-content-center text-white">
@@ -11,31 +11,26 @@
       </div>
     </template>
     <template #content>
-      <div class="game-cast-content">
-        <DataView :value="items" class="p-0 h-full">
-          <template #list="slotProps">
-            <div class="game-cast-items" ref="scrollContainer">
-              <div v-for="(item, index) in slotProps.items" class="game-cast-item" :key="index">
-                <span>Possession: {{ item.possession }} </span> | <span>Period: {{ item.period }} </span> | <span
-                  class="timestamp"> {{ item.time }} </span> -
-                {{ item.action }}
-              </div>
-            </div>
-          </template>
-        </DataView>
+      <div class="flex flex-column flex-1" style="height: 30vh">
+        <DataTable size="small" :value="items" class="flex flex-column p-0 flex-1" scrollable scrollHeight="flex"
+          tableStyle="min-width: 50rem">
+          <Column field="possession" header="Poss"></Column>
+          <Column field="period" header="Per"></Column>
+          <Column field="time" header="Time"></Column>
+          <Column field="action" header="Action"></Column>
+        </DataTable>
       </div>
     </template>
   </Card>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick } from "vue";
+import { ref, onUnmounted } from "vue";
 import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 
 const items = ref([]);
 const appWebview = getCurrentWebviewWindow();
-const scrollContainer = ref(null);
 const isSimming = ref(false);
 const checked = ref(false);
 const selected = ref(null);
@@ -48,13 +43,7 @@ const options = [
 ]
 
 const unlisten = appWebview.listen('game_event', (event) => {
-  items.value.push(event.payload);
-  if (items.value.length > 100) {
-    items.value.shift();
-  }
-  nextTick(() => {
-    scrollToBottom();
-  })
+  items.value.unshift(event.payload);
 });
 
 const stopSim = () => {
@@ -89,47 +78,14 @@ const handleSimSpeed = () => {
       break;
   }
 }
-
-const scrollToBottom = () => {
-  if (scrollContainer.value) {
-    scrollContainer.value.scrollTop = scrollContainer.value.scrollHeight;
-  }
-};
-
-onMounted(() => {
-  scrollToBottom();
-})
 </script>
 
 <style scoped>
-.timestamp {
-  border: 2px solid rgba(255, 230, 0, 0.767);
-  padding: 2px 5px;
-}
-
-.title {
-  text-align: center;
-}
-
-.dataview-container {
-  display: flex;
-  flex-direction: column;
+:deep(.p-datatable-wrapper) {
   height: 100%;
 }
 
-.game-cast-content {
-  flex: 0 0 auto;
-  overflow: hidden;
-  min-height: 0;
-}
-
-.game-cast-item {
-  margin-bottom: 0.5rem;
-}
-
-.game-cast-items {
-  height: 300px;
-  overflow-y: scroll !important;
-  padding: 0.5rem;
+:deep(.p-datatable-table) {
+  height: 100%;
 }
 </style>

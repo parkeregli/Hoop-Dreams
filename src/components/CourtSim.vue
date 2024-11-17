@@ -39,7 +39,6 @@ const unlistenPlayerStates = appWebview.listen('player_states', (event) => {
             }
           }
         }
-        console.log(player);
         drawPlayer(ctx, player);
       }
     }

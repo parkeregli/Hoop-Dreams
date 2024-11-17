@@ -1,27 +1,20 @@
 <template>
-  <div class="flex-column justify-content-between align-content-between">
-    <div class="w-full">
-      <Toolbar></Toolbar>
-      <div v-if="teams.length > 0" class="row align-items-stretch justify-content-between h-1/4">
-        <div class="w-full h-full">
-          <TeamDisplay class="h-full" :score="game.state.score[0]" :team_name="teams[0].name"
-            :players="game.state.team_state[0].active_players" />
-        </div>
-        <div v-if="false" class="w-full h-full">
-          <TeamStats class="h-full" :teamStats="teamStats" />
-        </div>
-        <div class="w-full h-full">
-          <TeamDisplay class="h-full" :score="game.state.score[1]" :team_name="teams[1].name"
-            :players="game.state.team_state[1].active_players" />
-        </div>
+  <div class="flex flex-column justify-content-between h-screen">
+    <Toolbar></Toolbar>
+    <div v-if="teams.length > 0" class="flex flex-grow">
+      <div class="w-full">
+        <TeamDisplay class="h-full" :score="game.state.score[0]" :team_name="teams[0].name"
+          :players="game.state.team_state[0].active_players" />
+      </div>
+      <div class="flex justify-center p-5 col-6">
+        <CourtSim />
+      </div>
+      <div class="w-full">
+        <TeamDisplay class="h-full" :score="game.state.score[1]" :team_name="teams[1].name"
+          :players="game.state.team_state[1].active_players" />
       </div>
     </div>
-    <div class="court-wrapper flex justify-center m-auto my-4">
-      <CourtSim />
-    </div>
-    <div class="game-cast-wrapper" style="height: 350px">
-      <GameCast />
-    </div>
+    <GameCast />
   </div>
 </template>
 
@@ -69,15 +62,4 @@ onMounted(async () => {
 });
 </script>
 
-<style scoped>
-.game-cast-wrapper {
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-}
-
-.court-wrapper {
-  max-width: 30%;
-  padding: 20px;
-}
-</style>
+<style scoped></style>
