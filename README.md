@@ -2,6 +2,14 @@
 
 Welcome to the Indie Basketball Manager Sim! This is a game where you can take on the role of a basketball team manager and lead your team to victory. Make strategic decisions, manage your roster, and compete against other teams in a thrilling basketball simulation experience.
 
+# Pet Project
+This is a pet project that I have worked off and on since 2024. Here is what is implemented so far:
+- Game Mechanics
+   - Basic AI to find the best shot for a posession
+   - Basic AI for character movements
+   - Basic map of the court and where the players are on the court
+   - Rough shot calculation
+
 ## 🚀 Getting Started
 
 To get started with the development of the Indie Basketball Manager Sim, follow these steps:
