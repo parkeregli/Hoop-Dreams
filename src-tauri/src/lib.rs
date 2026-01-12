@@ -8,51 +8,66 @@ mod util;
 use crate::util::state::{AppState, ServiceAccess};
 
 use std::sync::Arc;
-use tauri::{AppHandle, Emitter, Listener, Manager, State};
+use tauri::{AppHandle, Emitter, Manager, State};
 use util::db;
 
 #[tauri::command]
-fn get_teams(app_handle: AppHandle) -> Vec<team::Team> {
+fn get_teams(app_handle: AppHandle) -> Result<Vec<team::Team>, String> {
     let teams = app_handle
         .db(|db| team::Team::get_teams_from_db(db))
-        .unwrap();
-    teams
+        .map_err(|e| e.to_string())?
+        .map_err(|e| e.to_string())?;
+    Ok(teams)
 }
 
 #[tauri::command]
-fn get_team(app_handle: AppHandle, team_id: i64) -> team::Team {
+fn get_team(app_handle: AppHandle, team_id: i64) -> Result<team::Team, String> {
     let team = app_handle
         .db(|db| team::Team::get_team(&team_id, db))
-        .unwrap();
-    team
+        .map_err(|e| e.to_string())?
+        .map_err(|e| e.to_string())?;
+    Ok(team)
 }
 
 #[tauri::command]
-fn get_team_starting_lineup(app_handle: AppHandle, team_id: i64) -> [player::Player; 5] {
+fn get_team_starting_lineup(app_handle: AppHandle, team_id: i64) -> Result<[player::Player; 5], String> {
     let team = app_handle
         .db(|db| team::Team::get_team(&team_id, db))
-        .unwrap();
-    let players = app_handle.db(|db| team.get_starting_lineup(db)).unwrap();
-    players
+        .map_err(|e| e.to_string())?
+        .map_err(|e| e.to_string())?;
+    let players = app_handle
+        .db(|db| team.get_starting_lineup(db))
+        .map_err(|e| e.to_string())?
+        .map_err(|e| e.to_string())?;
+    Ok(players)
 }
 
 #[tauri::command]
-fn load_game(app_handle: AppHandle, state: tauri::State<AppState>) -> game::Game {
-    let new_game = app_handle.db(|db| game::Game::new(&db).unwrap());
-    *state.game.lock().unwrap() = Some(new_game.clone());
-    return new_game;
+fn load_game(app_handle: AppHandle, state: tauri::State<AppState>) -> Result<game::Game, String> {
+    let new_game = app_handle
+        .db(|db| game::Game::new(&db))
+        .map_err(|e| e.to_string())?
+        .map_err(|e| e.to_string())?;
+
+    let mut game_guard = state.game.lock().map_err(|e| e.to_string())?;
+    *game_guard = Some(new_game.clone());
+    Ok(new_game)
 }
 
-fn simulate_game(app_handle: AppHandle, speed: u8) -> Result<(), Box<dyn std::error::Error>> {
+fn simulate_game(app_handle: AppHandle, speed: u8) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     app_handle.emit("main", "simulation_started")?;
     let running = app_handle.state::<AppState>().running.clone();
     let state = app_handle.state::<AppState>();
     while running.load(std::sync::atomic::Ordering::SeqCst) {
-        let mut game = state.game.lock().unwrap();
-        let event = game
+        let mut game_guard = state.game.lock().map_err(|e| format!("Failed to acquire game lock: {}", e))?;
+        let game = game_guard
             .as_mut()
-            .ok_or("Game not initialized")?
-            .generate_next_game_event()?;
+            .ok_or("Game not initialized")?;
+        let event = game.generate_next_game_event()?;
+        let player_states = game.get_player_states();
+        let game_score = game.get_score();
+        let is_game_end = event.is_game_end();
+        drop(game_guard);
 
         match speed {
             1 => {
@@ -70,16 +85,11 @@ fn simulate_game(app_handle: AppHandle, speed: u8) -> Result<(), Box<dyn std::er
         }
 
         println!("{:?}", event);
-        app_handle.emit_to("main", "game_event", event.clone())?;
-        app_handle.emit_to(
-            "main",
-            "player_states",
-            game.as_ref().unwrap().get_player_states(),
-        )?;
-        let game_score = game.as_ref().unwrap().get_score();
+        app_handle.emit_to("main", "game_event", event)?;
+        app_handle.emit_to("main", "player_states", player_states)?;
         app_handle.emit_to("main", "game_score", game_score)?;
 
-        if event.is_game_end() {
+        if is_game_end {
             break;
         }
     }
@@ -93,8 +103,8 @@ fn set_sim_speed(
     state: tauri::State<AppState>,
     speed: u8,
 ) -> Result<(), String> {
-    //Stop the old thread
-    stop_sim(state.clone())?;
+    //Stop the old thread (ignore error if not running)
+    let _ = stop_sim(state.clone());
     //Start the new thread
     state
         .running
@@ -111,7 +121,10 @@ fn start_sim(
     state: tauri::State<AppState>,
     speed: u8,
 ) -> Result<(), String> {
-    let mut sim_thread = state.sim_thread.lock().unwrap();
+    let mut sim_thread = state
+        .sim_thread
+        .lock()
+        .map_err(|e| format!("Failed to acquire sim thread lock: {}", e))?;
     if sim_thread.is_some() {
         return Err("Simulation already running".to_string());
     }
@@ -122,7 +135,9 @@ fn start_sim(
     let app_handle_clone = app_handle.clone();
     let running = Arc::clone(&state.running);
     *sim_thread = Some(std::thread::spawn(move || {
-        let _ = simulate_game(app_handle_clone, speed);
+        if let Err(e) = simulate_game(app_handle_clone, speed) {
+            eprintln!("Simulation error: {}", e);
+        }
         running.store(false, std::sync::atomic::Ordering::SeqCst);
     }));
     Ok(())
@@ -136,7 +151,10 @@ fn stop_sim(state: tauri::State<AppState>) -> Result<(), String> {
     {
         return Err("Simulation not running".to_string());
     }
-    let mut sim_thread = state.sim_thread.lock().unwrap();
+    let mut sim_thread = state
+        .sim_thread
+        .lock()
+        .map_err(|e| format!("Failed to acquire sim thread lock: {}", e))?;
     if let Some(handle) = sim_thread.take() {
         handle
             .join()
@@ -167,12 +185,17 @@ pub fn run() {
             let path = app
                 .path()
                 .resolve("db", tauri::path::BaseDirectory::Config)
-                .expect("db path should be resolved");
-            let db = db::init(&path).expect("Database initialize should succeed");
+                .map_err(|e| format!("Failed to resolve db path: {}", e))?;
+            let db = db::init(&path)
+                .map_err(|e| format!("Failed to initialize database: {}", e))?;
 
             let handle = app.handle().clone();
             let app_state: State<AppState> = handle.state();
-            *app_state.db.lock().unwrap() = Some(db);
+            let mut db_guard = app_state
+                .db
+                .lock()
+                .map_err(|e| format!("Failed to acquire db lock: {}", e))?;
+            *db_guard = Some(db);
             Ok(())
         })
         .run(tauri::generate_context!())

@@ -64,43 +64,36 @@ pub struct Game {
 
 impl Game {
     pub fn new(db: &Connection) -> Result<Game, rusqlite::Error> {
-        let teams = Team::get_teams_from_db(db);
-        match teams {
-            Ok(teams) => {
-                let home_players = (
-                    teams[0]
-                        .get_starting_lineup(db)
-                        .expect("Error getting starting lineups"),
-                    teams[0].get_bench(db).expect("Error getting bench."),
-                );
-                let away_players = (
-                    teams[1]
-                        .get_starting_lineup(db)
-                        .expect("Error getting starting lineups"),
-                    teams[1].get_bench(db).expect("Error getting bench."),
-                );
-                let home_state = TeamState::new(home_players.0, home_players.1);
-                let away_state = TeamState::new(away_players.0, away_players.1);
-                let game = Game {
-                    teams: (teams[0].clone(), teams[1].clone()),
-                    state: GameState {
-                        period: 1,
-                        shot_clock: Duration::from_secs(24),
-                        possession: None,
-                        score: (0, 0),
-                        fouls: (0, 0),
-                        timeouts: (0, 0),
-                        team_state: [home_state, away_state],
-                        //720 = 12 minutes
-                        time: Duration::from_secs(720),
-                    },
-                    events: Vec::new(),
-                    sim: false,
-                };
-                Ok(game)
-            }
-            Err(e) => Err(e),
+        let teams = Team::get_teams_from_db(db)?;
+        if teams.len() < 2 {
+            return Err(rusqlite::Error::QueryReturnedNoRows);
         }
+
+        let home_starting = teams[0].get_starting_lineup(db)?;
+        let home_bench = teams[0].get_bench(db)?;
+        let away_starting = teams[1].get_starting_lineup(db)?;
+        let away_bench = teams[1].get_bench(db)?;
+
+        let home_state = TeamState::new(home_starting, home_bench);
+        let away_state = TeamState::new(away_starting, away_bench);
+
+        let game = Game {
+            teams: (teams[0].clone(), teams[1].clone()),
+            state: GameState {
+                period: 1,
+                shot_clock: Duration::from_secs(24),
+                possession: None,
+                score: (0, 0),
+                fouls: (0, 0),
+                timeouts: (0, 0),
+                team_state: [home_state, away_state],
+                //720 = 12 minutes
+                time: Duration::from_secs(720),
+            },
+            events: Vec::new(),
+            sim: false,
+        };
+        Ok(game)
     }
 
     pub fn change_possession(&mut self, new_possession: Option<(Possession, usize)>) {
@@ -282,11 +275,7 @@ impl Game {
         self.change_possession(new_possession);
         let _ = self.update_player_states();
 
-        if event.is_none() {
-            return Err("No event generated".to_string());
-        } else {
-            Ok(event.unwrap())
-        }
+        event.ok_or_else(|| "No event generated".to_string())
     }
     pub fn get_time(&self) -> String {
         let minutes = self.state.time.as_secs() / 60;
@@ -399,9 +388,8 @@ impl Game {
                 );
             }
         });
-        let event = game_event::GameEvent::generate_next_game_event(self);
+        let event = game_event::GameEvent::generate_next_game_event(self)?;
         println!("------------------------------------------------------");
-        //Wait 3 seconds
-        Ok(event.unwrap())
+        Ok(event)
     }
 }

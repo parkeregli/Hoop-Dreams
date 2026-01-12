@@ -35,7 +35,7 @@ impl GameEvent {
         // Generate next event
         if game.state.time.as_secs() > 0 {
             //Default
-            let event = game.handle_player_actions();
+            let event = game.handle_player_actions()?;
             //Generate random number between 1 and 24 float
             let mut rng = rand::thread_rng();
             let max = f32::min(3.0, game.state.time.as_secs_f32());
@@ -64,14 +64,13 @@ impl GameEvent {
             }
             game.state.time -= Duration::from_secs_f32(random);
 
-            return Ok(event.unwrap());
-        //    }
+            return Ok(event);
         } else if game.state.period >= 4 {
             if game.state.score.0 == game.state.score.1 {
                 //Overtime
                 game.state.period += 1;
                 game.state.time = Duration::from_secs(300);
-                let event = game.handle_player_actions();
+                let event = game.handle_player_actions()?;
                 //Generate random number between 1 and 24 float
                 let mut rng = rand::thread_rng();
                 let max = f32::min(6.0, game.state.time.as_secs_f32());
@@ -93,9 +92,9 @@ impl GameEvent {
                     game.state.shot_clock -= Duration::from_secs_f32(random)
                 }
                 game.state.time -= Duration::from_secs_f32(random);
-                game.events.push(event.clone().unwrap());
+                game.events.push(event.clone());
 
-                return Ok(event.unwrap());
+                return Ok(event);
             }
             // Game is over
             game.state.time = Duration::from_secs(0);
