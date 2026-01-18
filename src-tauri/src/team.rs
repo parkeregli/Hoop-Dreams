@@ -82,6 +82,23 @@ impl Team {
         Ok(())
     }
 
+    pub fn add_player_to_bench(
+        &self,
+        player: &player::Player,
+        db: &Connection,
+    ) -> Result<(), rusqlite::Error> {
+        let team_id = self.id.ok_or_else(|| {
+            rusqlite::Error::InvalidParameterName("Team ID not set".to_string())
+        })?;
+        let player_id = player.get_id().map_err(|e| {
+            rusqlite::Error::InvalidParameterName(e)
+        })?;
+        let mut stmt =
+            db.prepare("INSERT INTO team_bench (team_id, player_id) VALUES (?, ?)")?;
+        stmt.execute([team_id, player_id])?;
+        Ok(())
+    }
+
     pub fn get_starting_lineup(
         &self,
         db: &Connection,

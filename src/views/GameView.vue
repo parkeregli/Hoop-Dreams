@@ -44,7 +44,7 @@ import Toolbar from "@/components/Toolbar.vue";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import CourtSim from "@/components/CourtSim.vue";
 import Scoreboard from "@/components/Scoreboard.vue";
-import type { Game, Team, GameScorePayload, GameClockPayload } from "@/types/game";
+import type { Game, Team, Player, GameScorePayload, GameClockPayload } from "@/types/game";
 
 const appWindow = getCurrentWebviewWindow();
 
@@ -61,8 +61,8 @@ const homeScore = computed(() => game.value?.state.score[0] ?? 0);
 const awayScore = computed(() => game.value?.state.score[1] ?? 0);
 const homePlayers = computed(() => game.value?.state.team_state[0].active_players ?? []);
 const awayPlayers = computed(() => game.value?.state.team_state[1].active_players ?? []);
-const homeBench = computed(() => game.value?.state.team_state[0].bench ?? [[], []]);
-const awayBench = computed(() => game.value?.state.team_state[1].bench ?? [[], []]);
+const homeBench = computed((): [Player[], Player[]] => game.value?.state.team_state[0].bench ?? [[], []]);
+const awayBench = computed((): [Player[], Player[]] => game.value?.state.team_state[1].bench ?? [[], []]);
 const gameTime = computed(() => game.value?.state.time ?? { secs: 0, nanos: 0 });
 const shotClock = computed(() => game.value?.state.shot_clock ?? { secs: 0, nanos: 0 });
 const period = computed(() => game.value?.state.period ?? 1);

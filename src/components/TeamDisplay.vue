@@ -21,14 +21,16 @@
 </template>
 
 <script setup lang="ts">
-import { invoke } from "@tauri-apps/api/core";
-import { ref, onMounted, computed } from "vue";
-const props = defineProps({
-  team_name: { type: String, required: true },
-  players: { type: Array, required: true },
-  bench: { type: Array, required: true },
-  score: { type: Number, required: true }
-});
+import { computed } from "vue";
+import type { Player, PlayerState } from "@/types/game";
+
+const props = defineProps<{
+  team_name: string;
+  players: [Player, PlayerState][];
+  bench: [Player[], Player[]];
+  score: number;
+}>();
+
 const mappedPlayers = computed(() => {
   return props.players.map((player) => {
     return {
@@ -38,9 +40,10 @@ const mappedPlayers = computed(() => {
     };
   });
 });
+
 const mappedBench = computed(() => {
   // bench is [Player[], Player[]] - flatten both arrays
-  const allBench = [...(props.bench[0] || []), ...(props.bench[1] || [])];
+  const allBench: Player[] = [...(props.bench[0] || []), ...(props.bench[1] || [])];
   return allBench.map((player) => {
     return {
       position: player.position,

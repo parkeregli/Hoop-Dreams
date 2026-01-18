@@ -72,7 +72,8 @@ pub fn init(db_path: &PathBuf) -> Result<Connection, rusqlite::Error> {
     )?;
     let players = player::Player::get_all_players_from_db(&conn)?;
     if players.is_empty() {
-        let players = vec![
+        // Starters for both teams
+        let starters = vec![
             player::Player::new(
                 None,
                 "LeBron".to_string(),
@@ -174,9 +175,98 @@ pub fn init(db_path: &PathBuf) -> Result<Connection, rusqlite::Error> {
                 gen_rand_attrs(),
             ),
         ];
+
+        // Bench players for both teams
+        let bench_players = vec![
+            // Team 0 bench (4 players)
+            player::Player::new(
+                None,
+                "Marcus".to_string(),
+                "Smart".to_string(),
+                "PG".to_string(),
+                28,
+                6,
+                220,
+                gen_rand_attrs(),
+            ),
+            player::Player::new(
+                None,
+                "Jordan".to_string(),
+                "Clarkson".to_string(),
+                "SG".to_string(),
+                30,
+                6,
+                194,
+                gen_rand_attrs(),
+            ),
+            player::Player::new(
+                None,
+                "Bobby".to_string(),
+                "Portis".to_string(),
+                "PF".to_string(),
+                27,
+                6,
+                250,
+                gen_rand_attrs(),
+            ),
+            player::Player::new(
+                None,
+                "Ivica".to_string(),
+                "Zubac".to_string(),
+                "C".to_string(),
+                25,
+                7,
+                240,
+                gen_rand_attrs(),
+            ),
+            // Team 1 bench (4 players)
+            player::Player::new(
+                None,
+                "Tyrese".to_string(),
+                "Maxey".to_string(),
+                "PG".to_string(),
+                22,
+                6,
+                200,
+                gen_rand_attrs(),
+            ),
+            player::Player::new(
+                None,
+                "Malik".to_string(),
+                "Monk".to_string(),
+                "SG".to_string(),
+                25,
+                6,
+                200,
+                gen_rand_attrs(),
+            ),
+            player::Player::new(
+                None,
+                "Kyle".to_string(),
+                "Kuzma".to_string(),
+                "SF".to_string(),
+                27,
+                6,
+                221,
+                gen_rand_attrs(),
+            ),
+            player::Player::new(
+                None,
+                "Wendell".to_string(),
+                "Carter".to_string(),
+                "C".to_string(),
+                23,
+                6,
+                270,
+                gen_rand_attrs(),
+            ),
+        ];
+
         let teams = team::Team::get_teams_from_db(&conn)?;
+
+        // Add starters
         let mut i = 0;
-        for mut player in players {
+        for mut player in starters {
             player
                 .write_to_db(&conn)
                 .expect("Database write should succeed");
@@ -188,6 +278,22 @@ pub fn init(db_path: &PathBuf) -> Result<Connection, rusqlite::Error> {
                 teams[1].add_player_to_starting_lineup(&player, &conn)?;
             }
             i += 1;
+        }
+
+        // Add bench players
+        let mut j = 0;
+        for mut player in bench_players {
+            player
+                .write_to_db(&conn)
+                .expect("Database write should succeed");
+            if j < 4 {
+                teams[0].add_player_to_team(&player, &conn)?;
+                teams[0].add_player_to_bench(&player, &conn)?;
+            } else {
+                teams[1].add_player_to_team(&player, &conn)?;
+                teams[1].add_player_to_bench(&player, &conn)?;
+            }
+            j += 1;
         }
     }
 

@@ -28,10 +28,10 @@ struct TeamState {
 }
 
 impl TeamState {
-    pub fn new(starters: [Player; 5], _bench: Vec<Player>) -> Self {
+    pub fn new(starters: [Player; 5], bench: Vec<Player>) -> Self {
         Self {
             active_players: starters.map(|p| (p, PlayerState::new(None))),
-            bench: (Vec::new(), Vec::new()),
+            bench: (bench, Vec::new()),
         }
     }
 }
