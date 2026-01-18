@@ -1,5 +1,6 @@
-use crate::game::game_event::GameEvent;
-use crate::game::{Game, Possession};
+use crate::game::event::game_event::GameEvent;
+use crate::game::possession::Possession;
+use crate::game::Game;
 use crate::util::rng::rng;
 use rand::{thread_rng, Rng};
 
@@ -67,6 +68,6 @@ pub fn generate_jump_ball(game: &mut Game) -> Result<(), String> {
             return Ok(());
         }
     }
-    game.update_player_states();
+    let _ = game.update_player_states();
     Ok(())
 }

@@ -66,6 +66,7 @@ fn simulate_game(app_handle: AppHandle, speed: u8) -> Result<(), Box<dyn std::er
         let event = game.generate_next_game_event()?;
         let player_states = game.get_player_states();
         let game_score = game.get_score();
+        let game_clock = game.get_clock();
         let is_game_end = event.is_game_end();
         drop(game_guard);
 
@@ -88,6 +89,7 @@ fn simulate_game(app_handle: AppHandle, speed: u8) -> Result<(), Box<dyn std::er
         app_handle.emit_to("main", "game_event", event)?;
         app_handle.emit_to("main", "player_states", player_states)?;
         app_handle.emit_to("main", "game_score", game_score)?;
+        app_handle.emit_to("main", "game_clock", game_clock)?;
 
         if is_game_end {
             break;

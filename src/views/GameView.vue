@@ -1,17 +1,34 @@
 <template>
   <div class="flex flex-column justify-content-between h-screen">
     <Toolbar></Toolbar>
-    <div v-if="teams.length > 0" class="flex flex-grow">
+    <div v-if="hasTeams" class="flex flex-grow">
       <div class="w-full">
-        <TeamDisplay class="h-full" :score="game.state.score[0]" :team_name="teams[0].name"
-          :players="game.state.team_state[0].active_players" />
+        <TeamDisplay
+          class="h-full"
+          :score="homeScore"
+          :team_name="homeTeamName"
+          :players="homePlayers"
+          :bench="homeBench"
+        />
       </div>
-      <div class="flex justify-center p-5 col-6">
+      <div class="flex flex-column justify-center align-items-center p-5 col-6">
+        <Scoreboard
+          :time="gameTime"
+          :shot-clock="shotClock"
+          :period="period"
+          :possession="possession"
+          class="mb-4"
+        />
         <CourtSim />
       </div>
       <div class="w-full">
-        <TeamDisplay class="h-full" :score="game.state.score[1]" :team_name="teams[1].name"
-          :players="game.state.team_state[1].active_players" />
+        <TeamDisplay
+          class="h-full"
+          :score="awayScore"
+          :team_name="awayTeamName"
+          :players="awayPlayers"
+          :bench="awayBench"
+        />
       </div>
     </div>
     <GameCast />
@@ -23,42 +40,74 @@ import { invoke } from "@tauri-apps/api/core";
 import { ref, onMounted, computed } from "vue";
 import GameCast from "@/components/GameCast.vue";
 import TeamDisplay from "@/components/TeamDisplay.vue";
-import TeamStats from "@/components/TeamStats.vue";
-import { useRouter, useRoute } from "vue-router";
 import Toolbar from "@/components/Toolbar.vue";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import CourtSim from "@/components/CourtSim.vue";
-const appWindow = getCurrentWebviewWindow()
-const unlisten = appWindow.listen('game_score', (event) => {
-  game.value.state.score = event.payload
-})
+import Scoreboard from "@/components/Scoreboard.vue";
+import type { Game, Team, GameScorePayload, GameClockPayload } from "@/types/game";
 
-const router = useRouter();
+const appWindow = getCurrentWebviewWindow();
 
-const teams = ref([]);
-const game = ref({});
+// State
+const teams = ref<Team[]>([]);
+const game = ref<Game | null>(null);
 const loading = ref(false);
 
-const loadGame = async () => {
+// Computed properties for cleaner template access
+const hasTeams = computed(() => teams.value.length >= 2 && game.value !== null);
+const homeTeamName = computed(() => teams.value[0]?.name ?? "");
+const awayTeamName = computed(() => teams.value[1]?.name ?? "");
+const homeScore = computed(() => game.value?.state.score[0] ?? 0);
+const awayScore = computed(() => game.value?.state.score[1] ?? 0);
+const homePlayers = computed(() => game.value?.state.team_state[0].active_players ?? []);
+const awayPlayers = computed(() => game.value?.state.team_state[1].active_players ?? []);
+const homeBench = computed(() => game.value?.state.team_state[0].bench ?? [[], []]);
+const awayBench = computed(() => game.value?.state.team_state[1].bench ?? [[], []]);
+const gameTime = computed(() => game.value?.state.time ?? { secs: 0, nanos: 0 });
+const shotClock = computed(() => game.value?.state.shot_clock ?? { secs: 0, nanos: 0 });
+const period = computed(() => game.value?.state.period ?? 1);
+const possession = computed(() => game.value?.state.possession ?? null);
+
+// Listen for score updates
+appWindow.listen<GameScorePayload>("game_score", (event) => {
+  if (game.value) {
+    game.value.state.score = event.payload;
+  }
+});
+
+// Listen for clock updates
+appWindow.listen<GameClockPayload>("game_clock", (event) => {
+  if (game.value) {
+    game.value.state.time = event.payload[0];
+    game.value.state.shot_clock = event.payload[1];
+    game.value.state.period = event.payload[2];
+    game.value.state.possession = event.payload[3];
+  }
+});
+
+/**
+ * Loads the game from the backend.
+ */
+async function loadGame(): Promise<void> {
   try {
     loading.value = true;
-    const gameRes = await invoke("load_game");
+    const gameRes = await invoke<Game>("load_game");
+
     if (gameRes === null) {
       throw new Error("Failed to load game");
     }
+
     game.value = gameRes;
-    teams.value = gameRes.teams;
+    teams.value = [gameRes.teams[0], gameRes.teams[1]];
   } catch (error) {
-    console.error(error);
+    console.error("Failed to load game:", error);
+  } finally {
+    loading.value = false;
   }
-};
+}
 
 onMounted(async () => {
-  try {
-    await loadGame();
-  } catch (err) {
-    console.error(err);
-  }
+  await loadGame();
 });
 </script>
 

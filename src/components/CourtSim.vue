@@ -9,144 +9,198 @@
 import CourtTemplate from "@/assets/images/court_template.png";
 import { ref, onMounted } from 'vue';
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
-const appWebview = getCurrentWebviewWindow();
-const unlistenPlayerStates = appWebview.listen('player_states', (event) => {
-  //Update the canvas
-  const canvas = canvasRef.value;
-  if (canvas) {
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      for (let i = 0; i < event.payload.length; i++) {
-        const player = {
-          first_name: event.payload[i][0].first_name,
-          last_name: event.payload[i][0].last_name,
-          id: event.payload[i][0].id,
-          state: event.payload[i][1]
-        }
+import {
+  COURT_SECTIONS,
+  flipSections,
+  percentToPixels,
+  findSection,
+  type CourtSection,
+} from "@/data/court-sections";
+import type {
+  Player,
+  PlayerState,
+  PlayerStatesPayload,
+  GameEvent,
+} from "@/types/game";
 
-        if (players.value.length == 0) {
-          players.value.push(player);
-        } else {
-          //Replace the player with the new state if it already exists
-          for (let j = 0; j < players.value.length; j++) {
-            if (players.value[j].id == player.id) {
-              players.value[j] = player;
-              break;
-            }
-            if (j == players.value.length - 1) {
-              players.value.push(player);
-            }
-          }
-        }
-        drawPlayer(ctx, player);
-      }
-    }
-  }
-});
-
-//Store the last two events and see if the possession changed
-const event = ref();
-const flipState = ref(false);
-const unlistenEvents = appWebview.listen('game_event', (newEvent) => {
-  if (!event.value) {
-    event.value = newEvent.payload;
-    return;
-  }
-  if (event.value.possession !== newEvent.payload.possession) {
-    flipState.value = !flipState.value;
-  }
-  event.value = newEvent.payload;
-})
-
-const imageRef = ref<HTMLImageElement>();
-const canvasRef = ref<HTMLCanvasElement>();
-
-const players = ref([]);
-
-interface Section {
-  name: string;
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-  color: string;
-}
-
-interface Player {
+interface DisplayPlayer {
   id: number;
   first_name: string;
   last_name: string;
   state: PlayerState;
+  teamIndex: number; // 0 = home, 1 = away
 }
 
-interface PlayerState {
-  action: string;
-  current_area: string;
-}
+// Team colors for player rectangles
+const TEAM_COLORS = {
+  home: "rgba(0, 100, 200, 0.9)",  // Blue for home team
+  away: "rgba(200, 50, 50, 0.9)",  // Red for away team
+};
 
-const sections: Section[] = [
-  { name: "ThreePointLineCornerRight", x: 0, y: 0, w: 15, h: 12, color: "rgba(255, 0, 0, 0.5)" },
-  { name: "ThreePointLineWingRight", x: 15, y: 0, w: 16, h: 24, color: "rgba(255, 255, 0, 0.5)" },
-  { name: "MidrangeBaselineRight", x: 0, y: 12, w: 7, h: 16, color: "rgba(0, 255, 0, 0.5)" },
-  { name: "MidrangeWingRight", x: 7, y: 12, w: 8, h: 16, color: "rgba(0, 0, 255, 0.5)" },
-  { name: "ShortCornerRight", x: 0, y: 28, w: 6, h: 11, color: "rgba(0, 0, 255, 0.5)" },
-  { name: "LowPostRight", x: 6, y: 28, w: 9, h: 11, color: "rgba(255, 255, 0, 0.5)" },
-  { name: "RestrictedAreaRight", x: 0, y: 39, w: 8, h: 6, color: "rgba(255, 0, 0, 0.5)" },
-  { name: "ElbowRight", x: 15, y: 28, w: 5, h: 11, color: "rgba(255, 0, 0, 0.5)" },
-  { name: "FreeThrowLine", x: 12, y: 39, w: 8, h: 22, color: "rgba(0, 255, 0, 0.5)" },
-  { name: "RestrictedAreaMiddle", x: 7, y: 45, w: 4, h: 11, color: "rgba(0, 255, 0, 0.5)" },
-  { name: "MidrangeCenter", x: 20, y: 24, w: 7, h: 52, color: "rgba(0, 0, 255, 0.5)" },
-  { name: "ThreePointLineCenter", x: 27, y: 24, w: 11, h: 52, color: "rgba(0, 255, 0, 0.5)" },
-  { name: "Center", x: 38, y: 0, w: 25, h: 100, color: "rgba(255, 0, 0, 0.5)" },
-  { name: "Backcourt", x: 63, y: 0, w: 37, h: 100, color: "rgba(255, 255, 0, 0.5)" },
-  { name: "ThreePointLineWingLeft", x: 0, y: 88, w: 15, h: 12, color: "rgba(255, 255, 0, 0.5)" },
-  { name: "ThreePointLineWingLeft", x: 15, y: 76, w: 16, h: 24, color: "rgba(255, 0, 0, 0.5)" },
-  { name: "MidrangeBaselineLeft", x: 0, y: 72, w: 7, h: 16, color: "rgba(0, 255, 0, 0.5)" },
-  { name: "MidrangeWingLeft", x: 7, y: 74, w: 8, h: 14, color: "rgba(0, 0, 255, 0.5)" },
-  { name: "ShortCornerLeft", x: 0, y: 61, w: 6, h: 11, color: "rgba(0, 0, 255, 0.5)" },
-  { name: "LowPostLeft", x: 6, y: 61, w: 9, h: 11, color: "rgba(255, 255, 0, 0.5)" },
-  { name: "RestrictedAreaLeft", x: 0, y: 56, w: 8, h: 5, color: "rgba(0, 255, 255, 0.5)" },
-  { name: "ElbowLeft", x: 15, y: 61, w: 5, h: 11, color: "rgba(255, 0, 0, 0.5)" },
-]
+const appWebview = getCurrentWebviewWindow();
 
-function flipSections(sections: Section[]) {
-  return sections.map(section => {
-    return {
-      name: section.name,
-      x: 100 - section.x - section.w,
-      y: section.y,
-      w: section.w,
-      h: section.h,
-      color: section.color
+const imageRef = ref<HTMLImageElement>();
+const canvasRef = ref<HTMLCanvasElement>();
+const players = ref<DisplayPlayer[]>([]);
+const event = ref<GameEvent>();
+const flipState = ref(false);
+
+// Listen for player state updates
+appWebview.listen<PlayerStatesPayload>('player_states', (eventData) => {
+  const canvas = canvasRef.value;
+  if (!canvas) return;
+
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Build list of display players
+  const displayPlayers: DisplayPlayer[] = [];
+
+  // Backend sends home team first (indices 0-4), then away team (indices 5-9)
+  eventData.payload.forEach(([playerData, playerState], index) => {
+    const displayPlayer: DisplayPlayer = {
+      first_name: playerData.first_name,
+      last_name: playerData.last_name,
+      id: playerData.id,
+      state: playerState,
+      teamIndex: index < 5 ? 0 : 1, // First 5 = home, last 5 = away
+    };
+
+    updateOrAddPlayer(displayPlayer);
+    displayPlayers.push(displayPlayer);
+  });
+
+  // Group players by their current area
+  const playersByArea = new Map<string, DisplayPlayer[]>();
+  for (const player of displayPlayers) {
+    const area = player.state.current_area;
+    if (!playersByArea.has(area)) {
+      playersByArea.set(area, []);
     }
-  })
-}
-
-function percentToPixels(percent: number, total: number) {
-  return (percent / 100) * total;
-}
-
-//Get a player and draw a rectangle with their initials inside the section
-function drawPlayer(ctx: CanvasRenderingContext2D, player: Player) {
-  let section;
-  if (flipState.value) {
-    section = flipSections(sections).find(section => section.name == player.state.current_area);
-  } else {
-    section = sections.find(section => section.name == player.state.current_area);
+    playersByArea.get(area)!.push(player);
   }
-  if (!section) {
+
+  // Draw each group with proper positioning
+  for (const [area, areaPlayers] of playersByArea) {
+    drawPlayersInSection(ctx, areaPlayers);
+  }
+});
+
+// Listen for game events to track possession changes
+appWebview.listen<GameEvent>('game_event', (newEvent) => {
+  if (!event.value) {
+    event.value = newEvent.payload;
     return;
   }
-  const x = percentToPixels(section.x, ctx.canvas.width);
-  const y = percentToPixels(section.y, ctx.canvas.height);
-  const w = percentToPixels(section.w, ctx.canvas.width);
-  const h = percentToPixels(section.h, ctx.canvas.height);
-  ctx.fillStyle = section.color;
-  ctx.fillRect(x, y, w, h);
-  ctx.fillStyle = "black";
-  ctx.fillText(player.first_name[0], x + w / 2, y + h / 2);
-  ctx.fillText(player.last_name[0], x + w / 2, y + h / 2 + 10);
+
+  if (event.value.possession !== newEvent.payload.possession) {
+    flipState.value = !flipState.value;
+  }
+
+  event.value = newEvent.payload;
+});
+
+/**
+ * Updates an existing player or adds a new one to the players list.
+ */
+function updateOrAddPlayer(player: DisplayPlayer): void {
+  const existingIndex = players.value.findIndex(p => p.id === player.id);
+
+  if (existingIndex >= 0) {
+    players.value[existingIndex] = player;
+  } else {
+    players.value.push(player);
+  }
+}
+
+// Player rectangle dimensions
+const PLAYER_RECT_WIDTH = 20;
+const PLAYER_RECT_HEIGHT = 14;
+const PLAYER_SPACING = 4; // Gap between players in same section
+const PLAYER_TOTAL_HEIGHT = PLAYER_RECT_HEIGHT + 14; // Rectangle + name space
+
+/**
+ * Draws multiple players in the same section, arranged side by side.
+ */
+function drawPlayersInSection(ctx: CanvasRenderingContext2D, players: DisplayPlayer[]): void {
+  if (players.length === 0) return;
+
+  const sections = flipState.value ? flipSections(COURT_SECTIONS) : COURT_SECTIONS;
+  const section = findSection(sections, players[0].state.current_area);
+
+  if (!section) return;
+
+  // Get section position and size
+  const sectionX = percentToPixels(section.x, ctx.canvas.width);
+  const sectionY = percentToPixels(section.y, ctx.canvas.height);
+  const sectionW = percentToPixels(section.w, ctx.canvas.width);
+  const sectionH = percentToPixels(section.h, ctx.canvas.height);
+
+  // Calculate total width needed for all players
+  const totalWidth = players.length * PLAYER_RECT_WIDTH + (players.length - 1) * PLAYER_SPACING;
+
+  // Starting X position to center the group
+  const startX = sectionX + (sectionW - totalWidth) / 2;
+  const centerY = sectionY + (sectionH - PLAYER_TOTAL_HEIGHT) / 2;
+
+  // Draw each player
+  players.forEach((player, index) => {
+    const rectX = startX + index * (PLAYER_RECT_WIDTH + PLAYER_SPACING);
+    const rectY = centerY;
+
+    drawPlayerRect(ctx, player, rectX, rectY);
+  });
+}
+
+/**
+ * Draws a single player rectangle with their last name at the specified position.
+ */
+function drawPlayerRect(ctx: CanvasRenderingContext2D, player: DisplayPlayer, rectX: number, rectY: number): void {
+  // Draw player rectangle with team color
+  const teamColor = player.teamIndex === 0 ? TEAM_COLORS.home : TEAM_COLORS.away;
+  ctx.fillStyle = teamColor;
+  ctx.fillRect(rectX, rectY, PLAYER_RECT_WIDTH, PLAYER_RECT_HEIGHT);
+
+  // Draw border around rectangle
+  ctx.strokeStyle = "white";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(rectX, rectY, PLAYER_RECT_WIDTH, PLAYER_RECT_HEIGHT);
+
+  // Draw player last name below the rectangle
+  ctx.fillStyle = "white";
+  ctx.font = "bold 10px sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "top";
+
+  // Add text shadow for better visibility
+  ctx.shadowColor = "black";
+  ctx.shadowBlur = 2;
+  ctx.shadowOffsetX = 1;
+  ctx.shadowOffsetY = 1;
+
+  ctx.fillText(player.last_name, rectX + PLAYER_RECT_WIDTH / 2, rectY + PLAYER_RECT_HEIGHT + 2);
+
+  // Reset shadow
+  ctx.shadowColor = "transparent";
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 0;
+}
+
+/**
+ * Draws all court sections for debugging/visualization.
+ */
+function drawCourtSections(ctx: CanvasRenderingContext2D): void {
+  for (const section of COURT_SECTIONS) {
+    const x = percentToPixels(section.x, ctx.canvas.width);
+    const y = percentToPixels(section.y, ctx.canvas.height);
+    const w = percentToPixels(section.w, ctx.canvas.width);
+    const h = percentToPixels(section.h, ctx.canvas.height);
+    ctx.fillStyle = section.color;
+    ctx.fillRect(x, y, w, h);
+  }
 }
 
 onMounted(() => {
@@ -154,24 +208,9 @@ onMounted(() => {
   const img = imageRef.value;
 
   if (canvas && img) {
-    // Wait for image to load to get correct dimensions
     img.onload = () => {
-      // Set canvas dimensions to match image
       canvas.width = img.width;
       canvas.height = img.height;
-      // Now you can draw on the canvas
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        //Set fill to red with 50% transparency
-        for (const section of sections) {
-          const x = percentToPixels(section.x, canvas.width);
-          const y = percentToPixels(section.y, canvas.height);
-          const w = percentToPixels(section.w, canvas.width);
-          const h = percentToPixels(section.h, canvas.height);
-          ctx.fillStyle = section.color;
-          ctx.fillRect(x, y, w, h);
-        }
-      }
     };
   }
 });

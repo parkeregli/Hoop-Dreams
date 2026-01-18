@@ -4,7 +4,14 @@
       <h3 class="title">{{ team_name }}: {{ score }}</h3>
     </template>
     <template #content>
+      <h4 class="section-header">Starters</h4>
       <DataTable size="small" :value="mappedPlayers">
+        <Column field="first_name" header="First Name"></Column>
+        <Column field="last_name" header="Last Name"></Column>
+        <Column field="position" header="Position"></Column>
+      </DataTable>
+      <h4 class="section-header mt-3">Bench</h4>
+      <DataTable size="small" :value="mappedBench">
         <Column field="first_name" header="First Name"></Column>
         <Column field="last_name" header="Last Name"></Column>
         <Column field="position" header="Position"></Column>
@@ -19,6 +26,7 @@ import { ref, onMounted, computed } from "vue";
 const props = defineProps({
   team_name: { type: String, required: true },
   players: { type: Array, required: true },
+  bench: { type: Array, required: true },
   score: { type: Number, required: true }
 });
 const mappedPlayers = computed(() => {
@@ -30,10 +38,26 @@ const mappedPlayers = computed(() => {
     };
   });
 });
+const mappedBench = computed(() => {
+  // bench is [Player[], Player[]] - flatten both arrays
+  const allBench = [...(props.bench[0] || []), ...(props.bench[1] || [])];
+  return allBench.map((player) => {
+    return {
+      position: player.position,
+      first_name: player.first_name,
+      last_name: player.last_name
+    };
+  });
+});
 </script>
 
 <style scoped>
 .title {
   text-align: center;
+}
+.section-header {
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
 }
 </style>
