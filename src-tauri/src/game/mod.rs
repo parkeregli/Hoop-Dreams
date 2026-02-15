@@ -137,7 +137,8 @@ impl Game {
 
             // Handle shot attempts
             if is_buzzer_beater || player_state.is_shot().is_some() {
-                let (msg, points, possession) = self.handle_shot(player, player_state, is_buzzer_beater);
+                let (msg, points, possession) =
+                    self.handle_shot(player, player_state, is_buzzer_beater);
                 message = msg;
                 points_added = points;
                 new_possession = possession;
@@ -183,9 +184,38 @@ impl Game {
         player_state: &PlayerState,
         is_buzzer_beater: bool,
     ) -> (String, u8, BallPossession) {
-        // For buzzer beaters, use area points directly since any shot is forced.
-        // Otherwise, use is_shot() which returns points only for shot actions.
-        // Fall back to area points if is_shot() unexpectedly returns None.
+        let Some((possession, ball_holder_idx)) = self.state.possession else {
+            return (String::new(), 0, self.state.possession);
+        };
+
+        let offensive_team = possession.team_index();
+        let defensive_team = 1 - offensive_team;
+
+        let defender = &self.state.team_state[defensive_team].active_players[ball_holder_idx];
+        let defender_state = &defender.1;
+        let defender_attributes = defender.0.attributes();
+
+        let defender_in_range = player_state
+            .current_area
+            .is_adjacent_to(defender_state.current_area)
+            || player_state.current_area == defender_state.current_area;
+
+        let contest_str = if defender_in_range {
+            let stance = match defender_state.action {
+                PlayerAction::DefendTight => "tightly defended by",
+                PlayerAction::Defend => "defended by",
+                PlayerAction::DefendLoose => "loosely defended by",
+                PlayerAction::Block => "blocked by",
+                _ => "contested by",
+            };
+            format!(
+                " {} {} {}",
+                stance, defender.0.first_name, defender.0.last_name
+            )
+        } else {
+            String::new()
+        };
+
         let points = if is_buzzer_beater {
             player_state.current_area.points()
         } else {
@@ -195,30 +225,65 @@ impl Game {
         };
 
         let random: f32 = thread_rng().gen_range(0.0..1.0);
-        let shot_chance = player_state.calculate_shot_chance(player.attributes());
+        let shot_chance = player_state.calculate_shot_chance_with_defender(
+            player.attributes(),
+            Some(defender_state),
+            Some(defender_attributes),
+        );
         println!("RNG: {}, Shot Chance: {}", random, shot_chance);
 
         let (message, points_scored) = if shot_chance > random {
-            (
-                format!(
-                    "{} {} {:?} from {:?} and makes it!",
-                    player.first_name, player.last_name, player_state.action, player_state.current_area
-                ),
-                points,
-            )
+            let block_random: f32 = thread_rng().gen_range(0.0..1.0);
+            let block_chance = defender_state
+                .calculate_block_chance(defender_attributes, player_state.current_area);
+
+            if block_chance > block_random {
+                println!(
+                    "BLOCK! Block chance: {}, RNG: {}",
+                    block_chance, block_random
+                );
+                (
+                    format!(
+                        "{} {} {:?} from {:?} and gets BLOCKED by {} {}!",
+                        player.first_name,
+                        player.last_name,
+                        player_state.action,
+                        player_state.current_area,
+                        defender.0.first_name,
+                        defender.0.last_name
+                    ),
+                    0,
+                )
+            } else {
+                (
+                    format!(
+                        "{} {} {:?} from {:?} and makes it!{}",
+                        player.first_name,
+                        player.last_name,
+                        player_state.action,
+                        player_state.current_area,
+                        contest_str
+                    ),
+                    points,
+                )
+            }
         } else {
             (
                 format!(
-                    "{} {} {:?} from {:?} and misses it!",
-                    player.first_name, player.last_name, player_state.action, player_state.current_area
+                    "{} {} {:?} from {:?} and misses it!{}",
+                    player.first_name,
+                    player.last_name,
+                    player_state.action,
+                    player_state.current_area,
+                    contest_str
                 ),
                 0,
             )
         };
 
-        // Switch possession to random player on other team
         let new_player_index = thread_rng().gen_range(0..PLAYERS_PER_TEAM);
-        let new_possession = possession::switch_possession(&self.state.possession, new_player_index);
+        let new_possession =
+            possession::switch_possession(&self.state.possession, new_player_index);
 
         (message, points_scored, new_possession)
     }
@@ -277,7 +342,12 @@ impl Game {
     }
 
     pub fn get_clock(&self) -> (Duration, Duration, u8, BallPossession) {
-        (self.state.time, self.state.shot_clock, self.state.period, self.state.possession)
+        (
+            self.state.time,
+            self.state.shot_clock,
+            self.state.period,
+            self.state.possession,
+        )
     }
 
     pub fn get_player_states(&self) -> Vec<(Player, PlayerState)> {

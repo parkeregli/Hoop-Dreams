@@ -1,4 +1,4 @@
-use crate::game::court::{self, go_towards, is_between_basket, CourtArea};
+use crate::game::court::{self, can_move_to, go_towards, is_between_basket, CourtArea};
 use crate::player::player_attributes;
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -218,9 +218,51 @@ impl PlayerState {
     }
 
     pub fn calculate_shot_chance(&self, attributes: &player_attributes::PlayerAttributes) -> f32 {
+        self.calculate_shot_chance_with_defender(attributes, None, None)
+    }
+
+    pub fn calculate_shot_chance_with_defender(
+        &self,
+        attributes: &player_attributes::PlayerAttributes,
+        defender_state: Option<&PlayerState>,
+        defender_attributes: Option<&player_attributes::PlayerAttributes>,
+    ) -> f32 {
         let area_shot_chance = self.current_area.shot_chance();
         let attributes_shot_chance = attributes.shot_chance(self.current_area);
-        (area_shot_chance * attributes_shot_chance) / 100.0
+        let mut shot_chance = (area_shot_chance * attributes_shot_chance) / 100.0;
+
+        if let (Some(def_state), Some(def_attrs)) = (defender_state, defender_attributes) {
+            if is_defender_in_range(self.current_area, def_state.current_area) {
+                let defender_stance_mod = match def_state.action {
+                    PlayerAction::DefendTight => 0.70,
+                    PlayerAction::Defend => 0.85,
+                    PlayerAction::DefendLoose => 0.95,
+                    _ => 0.90,
+                };
+                let traffic_bonus = def_attrs.shot_in_traffic as f32 / 200.0;
+                shot_chance *= (defender_stance_mod + traffic_bonus).min(1.0);
+            }
+        }
+
+        shot_chance
+    }
+
+    pub fn calculate_block_chance(
+        &self,
+        attributes: &player_attributes::PlayerAttributes,
+        shooter_area: CourtArea,
+    ) -> f32 {
+        if !is_defender_in_range(self.current_area, shooter_area) {
+            return 0.0;
+        }
+
+        let base = attributes.block as f32 / 100.0;
+        let action_bonus = match self.action {
+            PlayerAction::Block => 0.20,
+            PlayerAction::DefendTight => 0.10,
+            _ => 0.0,
+        };
+        (base + action_bonus).min(0.40)
     }
 
     /// Updates the player state based on their role in the current play.
@@ -255,8 +297,15 @@ impl PlayerState {
         is_offense: (bool, bool),
         is_defense: (bool, Option<&PlayerState>),
     ) -> Result<(), String> {
-        let role = PlayerRole::from_legacy(is_offense, is_defense)
-            .map_err(|e| e.to_string())?;
+        let role = PlayerRole::from_legacy(is_offense, is_defense).map_err(|e| e.to_string())?;
         self.update_for_role(attributes, role)
     }
+}
+
+fn is_defender_in_range(shooter_area: CourtArea, defender_area: CourtArea) -> bool {
+    if shooter_area == defender_area {
+        return true;
+    }
+    let adjacent = can_move_to(shooter_area);
+    adjacent.contains(&defender_area)
 }

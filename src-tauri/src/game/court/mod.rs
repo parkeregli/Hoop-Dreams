@@ -50,6 +50,12 @@ pub enum CourtArea {
     OutOfBounds,
 }
 
+impl CourtArea {
+    pub fn is_adjacent_to(&self, other: CourtArea) -> bool {
+        can_move_to(*self).contains(&other)
+    }
+}
+
 // A* pathfinding implementation
 
 struct Node {
