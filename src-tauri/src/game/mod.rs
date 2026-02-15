@@ -6,6 +6,7 @@ pub mod court;
 pub mod event;
 pub mod game_config;
 pub mod possession;
+pub mod rebound;
 
 use crate::game::court::CourtArea;
 use crate::game::event::game_event;
@@ -90,12 +91,26 @@ impl Game {
     }
 
     pub fn change_possession(&mut self, new_possession: BallPossession) {
+        self.change_possession_with_clock(new_possession, None);
+    }
+
+    pub fn change_possession_with_clock(
+        &mut self,
+        new_possession: BallPossession,
+        shot_clock_override: Option<Duration>,
+    ) {
         let possession_changed = self.has_possession_changed(&new_possession);
 
         if possession_changed {
             self.reset_player_positions();
+        }
+
+        if let Some(d) = shot_clock_override {
+            self.state.shot_clock = d;
+        } else if possession_changed {
             self.state.shot_clock = shot_clock_duration();
         }
+
         self.state.possession = new_possession;
     }
 
@@ -130,6 +145,7 @@ impl Game {
         let mut message = String::new();
         let mut new_possession = self.state.possession;
         let mut points_added: u8 = 0;
+        let mut possession_handled = false;
 
         if let Some((player, player_state)) = self.player_has_ball() {
             let is_buzzer_beater = self.state.shot_clock < buzzer_beater_threshold()
@@ -137,26 +153,29 @@ impl Game {
 
             // Handle shot attempts
             if is_buzzer_beater || player_state.is_shot().is_some() {
-                let (msg, points, possession) =
+                let (msg, points, possession, shot_clock) =
                     self.handle_shot(player, player_state, is_buzzer_beater);
                 message = msg;
                 points_added = points;
                 new_possession = possession;
-            }
+                self.change_possession_with_clock(new_possession, shot_clock);
+                let _ = self.update_player_states();
+                possession_handled = true;
+            } else {
+                // Handle passes
+                if player_state.action == PlayerAction::Pass {
+                    let (msg, possession) = self.handle_pass(player, player_state);
+                    message = msg;
+                    new_possession = possession;
+                }
 
-            // Handle passes
-            if player_state.action == PlayerAction::Pass {
-                let (msg, possession) = self.handle_pass(player, player_state);
-                message = msg;
-                new_possession = possession;
-            }
-
-            // Handle drives
-            if player_state.action == PlayerAction::Drive {
-                message = format!(
-                    "{} {} drives to {:?}",
-                    player.first_name, player.last_name, player_state.current_area,
-                );
+                // Handle drives
+                if player_state.action == PlayerAction::Drive {
+                    message = format!(
+                        "{} {} drives to {:?}",
+                        player.first_name, player.last_name, player_state.current_area,
+                    );
+                }
             }
         }
 
@@ -172,8 +191,10 @@ impl Game {
             possession_for_event,
         );
 
-        self.change_possession(new_possession);
-        let _ = self.update_player_states();
+        if !possession_handled {
+            self.change_possession(new_possession);
+            let _ = self.update_player_states();
+        }
 
         Ok(event)
     }
@@ -183,9 +204,9 @@ impl Game {
         player: &Player,
         player_state: &PlayerState,
         is_buzzer_beater: bool,
-    ) -> (String, u8, BallPossession) {
+    ) -> (String, u8, BallPossession, Option<Duration>) {
         let Some((possession, ball_holder_idx)) = self.state.possession else {
-            return (String::new(), 0, self.state.possession);
+            return (String::new(), 0, self.state.possession, None);
         };
 
         let offensive_team = possession.team_index();
@@ -205,7 +226,6 @@ impl Game {
                 PlayerAction::DefendTight => "tightly defended by",
                 PlayerAction::Defend => "defended by",
                 PlayerAction::DefendLoose => "loosely defended by",
-                PlayerAction::Block => "blocked by",
                 _ => "contested by",
             };
             format!(
@@ -232,41 +252,39 @@ impl Game {
         );
         println!("RNG: {}, Shot Chance: {}", random, shot_chance);
 
-        let (message, points_scored) = if shot_chance > random {
-            let block_random: f32 = thread_rng().gen_range(0.0..1.0);
-            let block_chance = defender_state
-                .calculate_block_chance(defender_attributes, player_state.current_area);
+        let block_random: f32 = thread_rng().gen_range(0.0..1.0);
+        let block_chance =
+            defender_state.calculate_block_chance(defender_attributes, player_state.current_area);
 
-            if block_chance > block_random {
-                println!(
-                    "BLOCK! Block chance: {}, RNG: {}",
-                    block_chance, block_random
-                );
-                (
-                    format!(
-                        "{} {} {:?} from {:?} and gets BLOCKED by {} {}!",
-                        player.first_name,
-                        player.last_name,
-                        player_state.action,
-                        player_state.current_area,
-                        defender.0.first_name,
-                        defender.0.last_name
-                    ),
-                    0,
-                )
-            } else {
-                (
-                    format!(
-                        "{} {} {:?} from {:?} and makes it!{}",
-                        player.first_name,
-                        player.last_name,
-                        player_state.action,
-                        player_state.current_area,
-                        contest_str
-                    ),
-                    points,
-                )
-            }
+        let (mut message, points_scored) = if block_chance > block_random {
+            println!(
+                "BLOCK! Block chance: {}, RNG: {}",
+                block_chance, block_random
+            );
+            (
+                format!(
+                    "{} {} {:?} from {:?} and gets BLOCKED by {} {}!",
+                    player.first_name,
+                    player.last_name,
+                    player_state.action,
+                    player_state.current_area,
+                    defender.0.first_name,
+                    defender.0.last_name
+                ),
+                0,
+            )
+        } else if shot_chance > random {
+            (
+                format!(
+                    "{} {} {:?} from {:?} and makes it!{}",
+                    player.first_name,
+                    player.last_name,
+                    player_state.action,
+                    player_state.current_area,
+                    contest_str
+                ),
+                points,
+            )
         } else {
             (
                 format!(
@@ -281,11 +299,70 @@ impl Game {
             )
         };
 
-        let new_player_index = thread_rng().gen_range(0..PLAYERS_PER_TEAM);
-        let new_possession =
-            possession::switch_possession(&self.state.possession, new_player_index);
+        let (new_possession, shot_clock) = if points_scored > 0 {
+            let new_player_index = thread_rng().gen_range(0..PLAYERS_PER_TEAM);
+            (
+                possession::switch_possession(&self.state.possession, new_player_index),
+                None,
+            )
+        } else {
+            let rebound_zone = rebound::pick_rebound_zone(player_state.current_area);
+            let contenders = rebound::get_players_near_rebound_zone(self, rebound_zone);
+            let winner = rebound::resolve_rebound(&contenders, rebound_zone);
 
-        (message, points_scored, new_possession)
+            if let Some(winner) = winner {
+                let is_offensive = rebound::is_offensive_rebound(&winner, &self.state.possession);
+
+                if points_scored == 0 {
+                    let winner_player = &self.state.team_state[winner.team_index].active_players
+                        [winner.player_index]
+                        .0;
+
+                    let rebound_message = if is_offensive {
+                        format!(
+                            "{} {} grabs the offensive rebound!",
+                            winner_player.first_name, winner_player.last_name
+                        )
+                    } else {
+                        format!(
+                            "{} {} grabs the defensive rebound!",
+                            winner_player.first_name, winner_player.last_name
+                        )
+                    };
+
+                    message = format!("{} {}", message, rebound_message);
+                }
+
+                let new_possession: BallPossession = Some((
+                    if winner.team_index == 0 {
+                        Possession::Home
+                    } else {
+                        Possession::Away
+                    },
+                    winner.player_index,
+                ));
+
+                let shot_clock = if is_offensive {
+                    // If shot clock is below 15, reset to 15
+                    if self.state.shot_clock < Duration::from_secs(15) {
+                        Some(Duration::from_secs(15))
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                };
+
+                (new_possession, shot_clock)
+            } else {
+                let new_player_index = thread_rng().gen_range(0..PLAYERS_PER_TEAM);
+                let new_possession =
+                    possession::switch_possession(&self.state.possession, new_player_index);
+                (new_possession, None)
+            }
+        };
+
+        (message, points_scored, new_possession, shot_clock)
     }
 
     fn handle_pass(&self, player: &Player, player_state: &PlayerState) -> (String, BallPossession) {
