@@ -77,30 +77,24 @@ export interface PlayerState {
  * Player attributes for skills and physical stats.
  */
 export interface PlayerAttributes {
-  inside: number;
-  mid: number;
-  three: number;
-  ft: number;
-  layup: number;
-  dunk: number;
   spd: number;
-  quickness: number;
-  vertical: number;
-  strength: number;
-  stamina: number;
-  hustle: number;
-  bball_iq: number;
-  passing: number;
-  ball_handle: number;
-  post_moves: number;
-  def_rebound: number;
-  off_rebound: number;
-  shot_contest: number;
-  block: number;
-  steal: number;
   interior_def: number;
   perimeter_def: number;
+  close_shot: number;
+  mid_shot: number;
+  deep_shot: number;
+  shot_in_traffic: number;
+  intelligence: number;
+  handle: number;
+  pass: number;
+  block: number;
+  steal: number;
+  off_rebound: number;
+  def_rebound: number;
   ath: number;
+  strength: number;
+  durability: number;
+  conditioning: number;
 }
 
 /**
@@ -114,7 +108,7 @@ export interface Player {
   age: number;
   height: number;
   weight: number;
-  attr: PlayerAttributes;
+  attributes: PlayerAttributes;
 }
 
 /**

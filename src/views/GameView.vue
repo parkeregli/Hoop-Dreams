@@ -3,12 +3,25 @@
     <Toolbar></Toolbar>
     <div v-if="hasTeams" class="flex flex-grow">
       <div class="w-full">
+        <div class="flex justify-content-center gap-2 mb-2">
+          <Button 
+            size="small" 
+            :variant="homeViewMode === 'roster' ? 'filled' : 'outlined'"
+            @click="homeViewMode = 'roster'"
+          >Roster</Button>
+          <Button 
+            size="small" 
+            :variant="homeViewMode === 'attributes' ? 'filled' : 'outlined'"
+            @click="homeViewMode = 'attributes'"
+          >Attributes</Button>
+        </div>
         <TeamDisplay
           class="h-full"
           :score="homeScore"
           :team_name="homeTeamName"
           :players="homePlayers"
           :bench="homeBench"
+          :viewMode="homeViewMode"
         />
       </div>
       <div class="flex flex-column justify-center align-items-center p-5 col-6">
@@ -22,12 +35,25 @@
         <CourtSim />
       </div>
       <div class="w-full">
+        <div class="flex justify-content-center gap-2 mb-2">
+          <Button 
+            size="small" 
+            :variant="awayViewMode === 'roster' ? 'filled' : 'outlined'"
+            @click="awayViewMode = 'roster'"
+          >Roster</Button>
+          <Button 
+            size="small" 
+            :variant="awayViewMode === 'attributes' ? 'filled' : 'outlined'"
+            @click="awayViewMode = 'attributes'"
+          >Attributes</Button>
+        </div>
         <TeamDisplay
           class="h-full"
           :score="awayScore"
           :team_name="awayTeamName"
           :players="awayPlayers"
           :bench="awayBench"
+          :viewMode="awayViewMode"
         />
       </div>
     </div>
@@ -44,6 +70,7 @@ import Toolbar from "@/components/Toolbar.vue";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import CourtSim from "@/components/CourtSim.vue";
 import Scoreboard from "@/components/Scoreboard.vue";
+import Button from "primevue/button";
 import type { Game, Team, Player, GameScorePayload, GameClockPayload } from "@/types/game";
 
 const appWindow = getCurrentWebviewWindow();
@@ -52,6 +79,8 @@ const appWindow = getCurrentWebviewWindow();
 const teams = ref<Team[]>([]);
 const game = ref<Game | null>(null);
 const loading = ref(false);
+const homeViewMode = ref<"roster" | "attributes">("roster");
+const awayViewMode = ref<"roster" | "attributes">("roster");
 
 // Computed properties for cleaner template access
 const hasTeams = computed(() => teams.value.length >= 2 && game.value !== null);
@@ -91,6 +120,8 @@ appWindow.listen<GameClockPayload>("game_clock", (event) => {
 async function loadGame(): Promise<void> {
   try {
     loading.value = true;
+    homeViewMode.value = "roster";
+    awayViewMode.value = "roster";
     const gameRes = await invoke<Game>("load_game");
 
     if (gameRes === null) {
