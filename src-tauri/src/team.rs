@@ -54,12 +54,12 @@ impl Team {
         player: &player::Player,
         db: &Connection,
     ) -> Result<(), rusqlite::Error> {
-        let team_id = self.id.ok_or_else(|| {
-            rusqlite::Error::InvalidParameterName("Team ID not set".to_string())
-        })?;
-        let player_id = player.get_id().map_err(|e| {
-            rusqlite::Error::InvalidParameterName(e)
-        })?;
+        let team_id = self
+            .id
+            .ok_or_else(|| rusqlite::Error::InvalidParameterName("Team ID not set".to_string()))?;
+        let player_id = player
+            .get_id()
+            .map_err(|e| rusqlite::Error::InvalidParameterName(e))?;
         let mut stmt = db.prepare("INSERT INTO team_players (team_id, player_id) VALUES (?, ?)")?;
         stmt.execute([team_id, player_id])?;
         Ok(())
@@ -70,12 +70,12 @@ impl Team {
         player: &player::Player,
         db: &Connection,
     ) -> Result<(), rusqlite::Error> {
-        let team_id = self.id.ok_or_else(|| {
-            rusqlite::Error::InvalidParameterName("Team ID not set".to_string())
-        })?;
-        let player_id = player.get_id().map_err(|e| {
-            rusqlite::Error::InvalidParameterName(e)
-        })?;
+        let team_id = self
+            .id
+            .ok_or_else(|| rusqlite::Error::InvalidParameterName("Team ID not set".to_string()))?;
+        let player_id = player
+            .get_id()
+            .map_err(|e| rusqlite::Error::InvalidParameterName(e))?;
         let mut stmt =
             db.prepare("INSERT INTO team_starting_lineup (team_id, player_id) VALUES (?, ?)")?;
         stmt.execute([team_id, player_id])?;
@@ -87,14 +87,13 @@ impl Team {
         player: &player::Player,
         db: &Connection,
     ) -> Result<(), rusqlite::Error> {
-        let team_id = self.id.ok_or_else(|| {
-            rusqlite::Error::InvalidParameterName("Team ID not set".to_string())
-        })?;
-        let player_id = player.get_id().map_err(|e| {
-            rusqlite::Error::InvalidParameterName(e)
-        })?;
-        let mut stmt =
-            db.prepare("INSERT INTO team_bench (team_id, player_id) VALUES (?, ?)")?;
+        let team_id = self
+            .id
+            .ok_or_else(|| rusqlite::Error::InvalidParameterName("Team ID not set".to_string()))?;
+        let player_id = player
+            .get_id()
+            .map_err(|e| rusqlite::Error::InvalidParameterName(e))?;
+        let mut stmt = db.prepare("INSERT INTO team_bench (team_id, player_id) VALUES (?, ?)")?;
         stmt.execute([team_id, player_id])?;
         Ok(())
     }

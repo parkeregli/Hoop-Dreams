@@ -9,6 +9,16 @@
           <SelectButton @click="handleSimSpeed()" v-model="selected" :options="options" />
         </div>
       </div>
+      <div class="flex flex-wrap gap-3 mt-3">
+        <div class="flex justify-content-center text-white">
+          <SelectButton 
+            @click="handleJumpTarget()" 
+            v-model="jumpSelected" 
+            :options="jumpOptions" 
+            :disabled="isSimming"
+          />
+        </div>
+      </div>
     </template>
     <template #content>
       <div class="flex flex-column flex-1" style="height: 30vh">
@@ -28,18 +38,27 @@
 import { ref, onUnmounted } from "vue";
 import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
+import type { JumpTarget } from '@/types/game';
 
 const items = ref([]);
 const appWebview = getCurrentWebviewWindow();
 const isSimming = ref(false);
 const checked = ref(false);
 const selected = ref(null);
+const jumpSelected = ref(null);
 
 const options = [
   'Stop',
   'Play',
   'x2',
   'x3',
+]
+
+const jumpOptions = [
+  'Q2 Start',
+  'Q3 Start',
+  'Q4 Start',
+  'End Game',
 ]
 
 const unlisten = appWebview.listen('game_event', (event) => {
@@ -76,6 +95,20 @@ const handleSimSpeed = () => {
     case "x3":
       startSim(3);
       break;
+  }
+}
+
+const handleJumpTarget = async () => {
+  const targetMap: Record<string, JumpTarget> = {
+    'Q2 Start': 'Q2Start',
+    'Q3 Start': 'Q3Start',
+    'Q4 Start': 'Q4Start',
+    'End Game': 'GameEnd',
+  };
+  
+  if (jumpSelected.value && targetMap[jumpSelected.value]) {
+    await invoke("jump_to_target", { target: targetMap[jumpSelected.value] });
+    jumpSelected.value = null;
   }
 }
 </script>

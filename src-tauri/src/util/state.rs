@@ -60,9 +60,9 @@ impl ServiceAccess for AppHandle {
     {
         let app_state: State<AppState> = self.state();
         let db_connection_guard = app_state.db.lock()?;
-        let db = db_connection_guard
-            .as_ref()
-            .ok_or_else(|| StateError::NotInitialized("Database connection not initialized".to_string()))?;
+        let db = db_connection_guard.as_ref().ok_or_else(|| {
+            StateError::NotInitialized("Database connection not initialized".to_string())
+        })?;
 
         Ok(operation(db))
     }
@@ -73,9 +73,9 @@ impl ServiceAccess for AppHandle {
     {
         let app_state: State<AppState> = self.state();
         let mut db_connection_guard = app_state.db.lock()?;
-        let db = db_connection_guard
-            .as_mut()
-            .ok_or_else(|| StateError::NotInitialized("Database connection not initialized".to_string()))?;
+        let db = db_connection_guard.as_mut().ok_or_else(|| {
+            StateError::NotInitialized("Database connection not initialized".to_string())
+        })?;
 
         Ok(operation(db))
     }

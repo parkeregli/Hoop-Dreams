@@ -135,7 +135,7 @@ impl PlayerState {
     ) -> Vec<PlayerAction> {
         let shot_chance = self.calculate_shot_chance(attributes);
 
-        if shot_chance < 0.3 {
+        if shot_chance < 0.25 {
             return vec![PlayerAction::Pass, PlayerAction::Drive];
         }
 
@@ -234,9 +234,9 @@ impl PlayerState {
         if let (Some(def_state), Some(def_attrs)) = (defender_state, defender_attributes) {
             if is_defender_in_range(self.current_area, def_state.current_area) {
                 let defender_stance_mod = match def_state.action {
-                    PlayerAction::DefendTight => 0.70,
-                    PlayerAction::Defend => 0.85,
-                    PlayerAction::DefendLoose => 0.95,
+                    PlayerAction::DefendTight => 0.60,
+                    PlayerAction::Defend => 0.75,
+                    PlayerAction::DefendLoose => 0.85,
                     _ => 0.90,
                 };
                 let traffic_bonus = def_attrs.shot_in_traffic as f32 / 200.0;

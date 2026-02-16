@@ -197,3 +197,8 @@ export type GameClockPayload = [
   number,
   [Possession, number] | null
 ];
+
+/**
+ * Jump targets for fast-forwarding the game.
+ */
+export type JumpTarget = "Q2Start" | "Q3Start" | "Q4Start" | "GameEnd";

@@ -12,6 +12,7 @@ static COURT_GRAPH: LazyLock<Vec<(CourtArea, &'static [CourtArea])>> = LazyLock:
                 CourtArea::RestrictedAreaMiddle,
                 CourtArea::RestrictedAreaRight,
                 CourtArea::RestrictedAreaLeft,
+                CourtArea::Basket,
             ],
         ),
         (

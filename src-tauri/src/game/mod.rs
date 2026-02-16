@@ -522,4 +522,35 @@ impl Game {
             }
         }
     }
+
+    pub fn jump_to_target(&mut self, target: JumpTarget) -> Result<(), String> {
+        while self.state.period < target.target_period() {
+            while self.state.time.as_secs() > 0 {
+                let _ = self.generate_next_game_event()?;
+            }
+            if self.state.period >= NUM_PERIODS && self.state.score.0 == self.state.score.1 {
+                self.state.period += 1;
+                self.state.time = overtime_duration();
+            } else if self.state.period >= NUM_PERIODS {
+                break;
+            } else {
+                self.state.period += 1;
+                self.state.time = period_duration();
+            }
+        }
+
+        if target == JumpTarget::GameEnd {
+            while self.state.time.as_secs() > 0 {
+                let event = self.generate_next_game_event()?;
+                if event.is_game_end() {
+                    break;
+                }
+            }
+        } else {
+            self.state.time = target.target_time();
+            self.state.shot_clock = shot_clock_duration();
+        }
+
+        Ok(())
+    }
 }

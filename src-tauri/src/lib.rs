@@ -5,6 +5,7 @@ mod player;
 mod team;
 mod util;
 
+use crate::game::game_config::JumpTarget;
 use crate::util::state::{AppState, ServiceAccess};
 
 use std::sync::Arc;
@@ -30,7 +31,10 @@ fn get_team(app_handle: AppHandle, team_id: i64) -> Result<team::Team, String> {
 }
 
 #[tauri::command]
-fn get_team_starting_lineup(app_handle: AppHandle, team_id: i64) -> Result<[player::Player; 5], String> {
+fn get_team_starting_lineup(
+    app_handle: AppHandle,
+    team_id: i64,
+) -> Result<[player::Player; 5], String> {
     let team = app_handle
         .db(|db| team::Team::get_team(&team_id, db))
         .map_err(|e| e.to_string())?
@@ -54,15 +58,19 @@ fn load_game(app_handle: AppHandle, state: tauri::State<AppState>) -> Result<gam
     Ok(new_game)
 }
 
-fn simulate_game(app_handle: AppHandle, speed: u8) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+fn simulate_game(
+    app_handle: AppHandle,
+    speed: u8,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     app_handle.emit("main", "simulation_started")?;
     let running = app_handle.state::<AppState>().running.clone();
     let state = app_handle.state::<AppState>();
     while running.load(std::sync::atomic::Ordering::SeqCst) {
-        let mut game_guard = state.game.lock().map_err(|e| format!("Failed to acquire game lock: {}", e))?;
-        let game = game_guard
-            .as_mut()
-            .ok_or("Game not initialized")?;
+        let mut game_guard = state
+            .game
+            .lock()
+            .map_err(|e| format!("Failed to acquire game lock: {}", e))?;
+        let game = game_guard.as_mut().ok_or("Game not initialized")?;
         let event = game.generate_next_game_event()?;
         let player_states = game.get_player_states();
         let game_score = game.get_score();
@@ -72,16 +80,16 @@ fn simulate_game(app_handle: AppHandle, speed: u8) -> Result<(), Box<dyn std::er
 
         match speed {
             1 => {
-                std::thread::sleep(std::time::Duration::from_secs(2));
-            }
-            2 => {
-                std::thread::sleep(std::time::Duration::from_secs(1));
-            }
-            3 => {
                 std::thread::sleep(std::time::Duration::from_millis(500));
             }
+            2 => {
+                std::thread::sleep(std::time::Duration::from_millis(250));
+            }
+            3 => {
+                std::thread::sleep(std::time::Duration::from_millis(100));
+            }
             _ => {
-                std::thread::sleep(std::time::Duration::from_secs(3));
+                std::thread::sleep(std::time::Duration::from_secs(1));
             }
         }
 
@@ -165,6 +173,37 @@ fn stop_sim(state: tauri::State<AppState>) -> Result<(), String> {
     Ok(())
 }
 
+#[tauri::command]
+fn jump_to_target(
+    app_handle: AppHandle,
+    state: tauri::State<AppState>,
+    target: JumpTarget,
+) -> Result<(), String> {
+    let mut game_guard = state
+        .game
+        .lock()
+        .map_err(|e| format!("Failed to acquire game lock: {}", e))?;
+    let game = game_guard.as_mut().ok_or("Game not initialized")?;
+
+    game.jump_to_target(target)?;
+
+    let player_states = game.get_player_states();
+    let game_score = game.get_score();
+    let game_clock = game.get_clock();
+
+    app_handle
+        .emit_to("main", "player_states", player_states)
+        .map_err(|e| e.to_string())?;
+    app_handle
+        .emit_to("main", "game_score", game_score)
+        .map_err(|e| e.to_string())?;
+    app_handle
+        .emit_to("main", "game_clock", game_clock)
+        .map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -181,15 +220,16 @@ pub fn run() {
             load_game,
             start_sim,
             stop_sim,
-            set_sim_speed
+            set_sim_speed,
+            jump_to_target
         ])
         .setup(|app| {
             let path = app
                 .path()
                 .resolve("db", tauri::path::BaseDirectory::Config)
                 .map_err(|e| format!("Failed to resolve db path: {}", e))?;
-            let db = db::init(&path)
-                .map_err(|e| format!("Failed to initialize database: {}", e))?;
+            let db =
+                db::init(&path).map_err(|e| format!("Failed to initialize database: {}", e))?;
 
             let handle = app.handle().clone();
             let app_state: State<AppState> = handle.state();
